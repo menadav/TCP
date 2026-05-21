@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ===================================================================================================================================================
 Go es un lenguaje que compila a diferencia de python. Tambien tiene un Garbage Collector que no hace falta liberar memoria de variables.
 - Concurrencia:
@@ -55,7 +54,3 @@ cmd/client/main.go:
     -leemos respusta en el server		"n", err := conn.Read(buffer)"
 ===================================================================================================================================================
 =======
-# TCP
->>>>>>> 97850a2c03b3f6ffb8ad314e8c70ca007f6c3aa1
-# TCP
-# TCP
