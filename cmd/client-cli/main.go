@@ -7,7 +7,6 @@ import (
 )
 
 func main(){
-
 	var conn net.Conn
 	var err error
 
@@ -18,7 +17,6 @@ func main(){
 	}
 	defer conn.Close()
 
-	network.ReadServer(conn, func(textCli string){
-		fmt.Println("Server:", textCli)
-	})
+	go network.ReadServer(conn, network.TextServer)
+	network.WriteFromStdin(conn)
 }

@@ -1,9 +1,12 @@
 package main
 
 import (
+	"answer_protocol/internal/network"
 	"fmt"
 	"net"
 )
+
+
 
 func main(){
 	var listen net.Listener
@@ -16,6 +19,8 @@ func main(){
 		return
 	}
 	defer listen.Close()
+
+	fmt.Println("Servidor listo en el puerto :8080")
 	for {
 		user, err = listen.Accept()
 		if err != nil{
@@ -24,5 +29,6 @@ func main(){
 		}
 		fmt.Println("Cliente conectado desde:", user.RemoteAddr())
 		user.Write([]byte("Hola, bienvenido a The Answer Protocol\n"))
+		go network.ClientAtender(user)
 	}
 }
