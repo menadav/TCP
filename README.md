@@ -42,6 +42,7 @@ go.mod
 ===================================================================================================================================================
 
 cmd/server/main.go:
+    -:8080 ->                                    Leo en todas las interfazes de esta maquina   0.0.0.0:8080
     -Creamos servidor                          "listen, err := net.Listen("tcp", ":8080")"
     -Aceptamos los usuarios                    "user, err := listen.Accept()"
     -Enviamos mensaje al user                  "user.Write([]byte("Hola, bienvenido a The Answer Protocol\n"))"
@@ -53,4 +54,3 @@ cmd/client/main.go:
     -Hacemos llamado server			"conn, err := net.Dial("tcp", ":8080")"
     -leemos respusta en el server		"n", err := conn.Read(buffer)"
 ===================================================================================================================================================
-=======

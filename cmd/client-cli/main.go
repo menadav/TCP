@@ -7,16 +7,12 @@ import (
 )
 
 func main(){
-	var conn net.Conn
-	var err error
-
-	conn, err = net.Dial("tcp", ":8080")
+	conn, err := net.Dial("tcp", ":8080")
 	if err != nil {
-		fmt.Println("Error to connect client CLI:", err)
+		fmt.Println("Error connecting:", err)
 		return
 	}
 	defer conn.Close()
-
-	go network.ReadServer(conn, network.TextServer)
+	go network.ReadServer(conn, network.TextClient)
 	network.WriteFromStdin(conn)
 }

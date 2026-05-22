@@ -2,6 +2,7 @@ package main
 
 import (
 	"answer_protocol/internal/network"
+	"answer_protocol/internal/constructor"
 	"fmt"
 	"net"
 )
@@ -9,26 +10,24 @@ import (
 
 
 func main(){
-	var listen net.Listener
-	var err error
-	var user net.Conn
-
-	listen, err = net.Listen("tcp", ":8080")
+	listen, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		fmt.Println("Error listen", err)
 		return
 	}
 	defer listen.Close()
-
+	hub := constructor.NewHub()
+	go hub.Run()
 	fmt.Println("Servidor listo en el puerto :8080")
 	for {
-		user, err = listen.Accept()
+		conn, err := listen.Accept()
 		if err != nil{
 			fmt.Println("Error Accept", err)
 			continue
 		}
-		fmt.Println("Cliente conectado desde:", user.RemoteAddr())
-		user.Write([]byte("Hola, bienvenido a The Answer Protocol\n"))
-		go network.ClientAtender(user)
+		hub.Register <- conn
+		fmt.Println("Client connected from:", conn.RemoteAddr())
+		conn.Write([]byte("[Server] Welcome to The Answer Protocol\nWrite your name:\n"))
+		go network.ClientAtender(conn, hub)
 	}
 }
