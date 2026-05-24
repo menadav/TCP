@@ -12,14 +12,53 @@ Memory  1MB    2KB  (Pero puede ir creciendo)
 Create  slow   fast
 
 ===================================================================================================================================================
+Flujo  Programa:
+start -> go run cmd/server/main.go
+- [server]Escucho puerto.                               ->	listen, err := net.Listen("tcp", ":8080")
+- [server]Si cierra el programa cierra la net		    -> 	defer listen.Close()
+- [server]Construimos un hub que contendra los canales  -> 	hub := constructor.NewHub()
+- [server]La hacemos trabajar en segundo plano
+- [server]Entramos while infinito (for {})
+- [server]Se freezea para esperar la llamada de un user ->	conn, err := listen.Accept()
+go run cmd/client-cli/main.go
+- [client]Llamamos al puerto del server		 	        ->	conn, err := net.Dial("tcp", ":8080")
+- [client]Si cierra el programa cierra la net	 	    ->	defer conn.Close()
+go run cmd/server/main.go
+- [server]Registra al user al Hub de canales		    ->	hub.Register <- conn
+- [server]Creamos Hilo que ejecutar lectura user        -> 	go network.ClientAtender(conn, hub)
+- [server] -> [Cliente] comunicados
+go run cmd/client-cli/main.go
+- [client]Creare un segundo plano que leea server	    ->	go readServer
+- [client]Podra escribir por terminal , que enviara [server] con su conexion de net.dial
+Conseguimos una comunicacion Bidimensional [server]---[client]
+
+===================================================================================================================================================
+
 FASE 1: Conectar server 
 	Lograr que el Servidor acepte un cliente, le mande un saludo, y que el Cliente (CLI) lo reciba y lo pinte en pantalla usando tu paquete network.
+
 FASE 2: Recibir llamadas cli -> server
 	Lograr que el Cliente envie mensaje al server y le devuelva una respuesta simulada
+
+Fase 3: Recibir llamadas todos los clientes.
+	Lograr que el cliente envie mensaje al server y devuelva a TODOS Broadcast .
+
+Fase 4: Autentificador
+    Lograr un bucle si no escribe correctamente los comandos para connectar
+
+Fase 5: Crear Formato Chat.
+    Depende lo que escriba el usuario hacer una accion o otra. Mirar, Escribir todos.
 
 ===================================================================================================================================================
 
 package main -> Obligatorio para poder compilar.
+package: Si tienes mas de un script en la misma raiz , todos contendran el mismo name 
+package <name>
+Los files en la misma raiz se reconozen , no hace falta llamarlas de que package vienen.
+- Diferente raiz:  network.function()
+- Misma Raiz:	   function()
+
+
 [go run <file>]
 [go build <file>]
 
@@ -39,18 +78,4 @@ if err != nil {return} -> No hay try,except. Se comprueba los errores similar a 
 ===================================================================================================================================================
 go.mod
     Es un requeriments.txt 
-===================================================================================================================================================
-
-cmd/server/main.go:
-    -:8080 ->                                    Leo en todas las interfazes de esta maquina   0.0.0.0:8080
-    -Creamos servidor                          "listen, err := net.Listen("tcp", ":8080")"
-    -Aceptamos los usuarios                    "user, err := listen.Accept()"
-    -Enviamos mensaje al user                  "user.Write([]byte("Hola, bienvenido a The Answer Protocol\n"))"
-    -Mantiene bucle infinito el servidor,
-        siempre open.
-===================================================================================================================================================
-
-cmd/client/main.go:
-    -Hacemos llamado server			"conn, err := net.Dial("tcp", ":8080")"
-    -leemos respusta en el server		"n", err := conn.Read(buffer)"
 ===================================================================================================================================================

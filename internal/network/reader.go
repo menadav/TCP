@@ -2,11 +2,9 @@ package network
 
 import (
     "answer_protocol/internal/models"
-    "answer_protocol/internal/constructor"
     "bufio"
     "fmt"
     "net"
-    "io"
     "os"
 )
 
@@ -16,13 +14,7 @@ func TextClient(text string) {
     fmt.Println(text)
 }
 
-func TextServer(text string) {
-    fmt.Println("\n[Server]:", text)
-}
-
-
-func StartScanner(source io.Reader, process TextProcessor) {
-    scanner := bufio.NewScanner(source)
+func StartScanner(scanner *bufio.Scanner, process TextProcessor) {
     for scanner.Scan() {
         process(scanner.Text())
     }
@@ -32,35 +24,26 @@ func StartScanner(source io.Reader, process TextProcessor) {
 }
 
 func WriteFromStdin(conn net.Conn) {
-    StartScanner(os.Stdin, func(text string) {
-        conn.Write([]byte(text + "\n"))
-    })
-}
-
-func BroadcastMessage(conn net.Conn, hub *models.Hub) TextProcessor {
-    return func(msg string) {
-        player := hub.Clients[conn]
-        hub.Broadcast <-"[" + player.Name + "]: " + msg
+    scanner := bufio.NewScanner(os.Stdin)
+    for scanner.Scan() {
+        conn.Write([]byte(scanner.Text() + "\n"))
     }
 }
 
-func ReadServer(conn net.Conn, process TextProcessor) {
-    StartScanner(conn, process)
+func BroadcastMessage(name string, hub *models.Hub) TextProcessor {
+    return func(msg string) {
+        new_name := fmt.Sprintf("[%s]", name)
+        event := fmt.Sprintf("[S] EVT GLOBAL CHAT %s %s\n", new_name, msg)
+        hub.Broadcast <- event
+    }
+}
+
+func ReadServer(scanner *bufio.Scanner, process TextProcessor) {
+    StartScanner(scanner, process)
 }
 
 func ReadLine(conn net.Conn) string {
     scanner := bufio.NewScanner(conn)
     scanner.Scan()
     return scanner.Text()
-}
-
-func ClientAtender(conn net.Conn, hub *models.Hub) {
-    defer func() {
-        hub.Unregister <- conn
-        conn.Close()
-    }()
-    name := ReadLine(conn)
-    player := constructor.NewPlayer(conn.RemoteAddr().String(), name) 
-    hub.Clients[conn] = player
-    ReadServer(conn, BroadcastMessage(conn, hub))
 }

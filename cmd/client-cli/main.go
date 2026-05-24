@@ -2,6 +2,7 @@ package main
 
 import (
 	"answer_protocol/internal/network"
+	"bufio"
 	"fmt"
 	"net"
 )
@@ -13,6 +14,7 @@ func main(){
 		return
 	}
 	defer conn.Close()
-	go network.ReadServer(conn, network.TextClient)
+	scanner := bufio.NewScanner(conn)
+	go network.ReadServer(scanner, network.TextClient)
 	network.WriteFromStdin(conn)
 }

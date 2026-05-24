@@ -25,9 +25,8 @@ func main(){
 			fmt.Println("Error Accept", err)
 			continue
 		}
-		hub.Register <- conn
 		fmt.Println("Client connected from:", conn.RemoteAddr())
-		conn.Write([]byte("[Server] Welcome to The Answer Protocol\nWrite your name:\n"))
+		conn.Write([]byte("[S] Welcome to The Answer Protocol\n"))
 		go network.ClientAtender(conn, hub)
 	}
 }
