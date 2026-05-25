@@ -10,7 +10,7 @@ import (
 
 
 func main(){
-	listen, err := net.Listen("tcp", ":8080")
+	listen, err := net.Listen("tcp", ":8082")
 	if err != nil {
 		fmt.Println("Error listen", err)
 		return
@@ -26,7 +26,7 @@ func main(){
 			continue
 		}
 		fmt.Println("Client connected from:", conn.RemoteAddr())
-		conn.Write([]byte("[S] Welcome to The Answer Protocol\n"))
+		network.SendSuccess(conn, "hello proto=1")
 		go network.ClientAtender(conn, hub)
 	}
 }
