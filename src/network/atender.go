@@ -35,10 +35,12 @@ func Authentication(scanner *bufio.Scanner, conn net.Conn) string {
                 continue
             } else if len(name_p) < 3{
                 SendError(conn, 400, "min 3 characters")
+                continue
             } else if !regexp.MustCompile(`^[a-zA-Z]+$`).MatchString(name_p){
                 SendError(conn, 400, "only letters")
                 continue
             }
+            conn.SetReadDeadline(time.Time{})
             SendSuccess(conn, "connected")
             return name_p
         } else {
@@ -50,20 +52,19 @@ func Authentication(scanner *bufio.Scanner, conn net.Conn) string {
 func ClientAtender(conn net.Conn, hub *models.Hub) {
     scanner := bufio.NewScanner(conn)
     name_p := ""
-
+    name_p = Authentication(scanner, conn)
+    if name_p == "" {
+        conn.Close()
+        return
+    }
+    player := constructor.NewPlayer(conn.RemoteAddr().String(), conn, name_p, "loc.start")
     defer func() {
-        if name_p == "" {
-            hub.Unregister <- conn
+        if name_p != "" {
+            hub.Unregister <- player
         }
         conn.Close()
     }()
-    name_p = Authentication(scanner, conn)
-    if name_p == "" {
-        return
-    }
-    hub.Register <- conn
-    player := constructor.NewPlayer(conn.RemoteAddr().String(), name_p)
-    hub.Clients[conn] = player
+    hub.Register <- player
     processFunction := BroadcastMessage(name_p, hub)
     ReadServer(scanner, processFunction)
 }

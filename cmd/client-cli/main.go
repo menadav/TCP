@@ -1,7 +1,7 @@
 package main
 
 import (
-	"answer_protocol/internal/network"
+	"answer_protocol/src/network"
 	"bufio"
 	"fmt"
 	"net"

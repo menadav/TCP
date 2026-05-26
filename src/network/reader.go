@@ -1,7 +1,7 @@
 package network
 
 import (
-    "answer_protocol/internal/models"
+    "answer_protocol/src/models"
     "bufio"
     "fmt"
     "net"
@@ -33,7 +33,7 @@ func WriteFromStdin(conn net.Conn) {
 func BroadcastMessage(name string, hub *models.Hub) TextProcessor {
     return func(msg string) {
         new_name := fmt.Sprintf("[%s]", name)
-        event := fmt.Sprintf("[S] EVT GLOBAL CHAT %s %s\n", new_name, msg)
+        event := fmt.Sprintf("EVT GLOBAL CHAT %s %s\n", new_name, msg)
         hub.Broadcast <- event
     }
 }

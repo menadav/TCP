@@ -1,8 +1,8 @@
 package main
 
 import (
-	"answer_protocol/internal/network"
-	"answer_protocol/internal/constructor"
+	"answer_protocol/src/network"
+	"answer_protocol/src/constructor"
 	"fmt"
 	"net"
 )
@@ -18,7 +18,7 @@ func main(){
 	defer listen.Close()
 	hub := constructor.NewHub()
 	go hub.Run()
-	fmt.Println("Servidor listo en el puerto :8080")
+	fmt.Println("Server ready on the port :")
 	for {
 		conn, err := listen.Accept()
 		if err != nil{
