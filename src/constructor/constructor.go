@@ -11,6 +11,7 @@ func NewHub() *models.Hub{
 		Unregister: make(chan *models.Player),
 		Broadcast:  make(chan models.Message),
 		Clients: 	make(map[net.Conn]*models.Player),
+		Groups:     make(map[string]*models.Group),
 	}
 }
 

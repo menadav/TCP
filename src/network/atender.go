@@ -5,6 +5,7 @@ import (
     "answer_protocol/src/constructor"
     "answer_protocol/src/parse"
     "answer_protocol/src/speakserver"
+    "answer_protocol/src/utils"
     "bufio"
     "net"
     "strings"
@@ -12,7 +13,7 @@ import (
     "time"
 )
 
-func Authentication(scanner *bufio.Scanner, conn net.Conn) string {
+func Authentication(scanner *bufio.Scanner, conn net.Conn, h *models.Hub) string {
     for {
         conn.SetReadDeadline(time.Now().Add(30 * time.Second))
         if !scanner.Scan() {
@@ -42,6 +43,9 @@ func Authentication(scanner *bufio.Scanner, conn net.Conn) string {
             } else if !regexp.MustCompile(`^[a-zA-Z]+$`).MatchString(name_p){
                 speak.SendError(conn, 400, "only letters")
                 continue
+            } else if utils.ExistName(h.Clients, name_p) {
+                speak.SendError(conn, 400, "The name is already chosen, please choose another.")
+                continue
             }
             conn.SetReadDeadline(time.Time{})
             speak.SendSuccess(conn, "connected")
@@ -55,7 +59,7 @@ func Authentication(scanner *bufio.Scanner, conn net.Conn) string {
 func ClientAtender(conn net.Conn, hub *models.Hub) {
     scanner := bufio.NewScanner(conn)
     name_p := ""
-    name_p = Authentication(scanner, conn)
+    name_p = Authentication(scanner, conn, hub)
     if name_p == "" {
         conn.Close()
         return

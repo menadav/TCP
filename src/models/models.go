@@ -2,6 +2,8 @@ package models
 
 import (
     "net"
+    "sync"
+
 )
 
 type Scope string
@@ -15,7 +17,6 @@ const (
 type Message struct{
     Scope       Scope
     Filter      string
-    Category    string
     Content     string
 }
 
@@ -26,12 +27,41 @@ type Player struct{
     Room    string
     Group   string
 }
+type Group struct {
+	Id         string
+	Leader     *Player
+	mu         sync.RWMutex
+	Members    map[net.Conn]*Player
+}
 
 type Hub struct {
     Register   chan *Player
     Unregister chan *Player
     Broadcast  chan Message
     Clients    map[net.Conn]*Player
+    Groups     map[string]*Group
+}
+
+func (g *Group) AddMember(conn net.Conn, p *Player) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.Members[conn] = p
+}
+
+func (g *Group) RemoveMember(conn net.Conn) int {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	delete(g.Members, conn)
+	return len(g.Members)
+}
+
+func (g *Group) Broadcast(content string) {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+	msgBytes := []byte(content + "\n")
+	for _, player := range g.Members {
+		player.Conn.Write(msgBytes)
+	}
 }
 
 func (h *Hub) Run(){
@@ -40,22 +70,33 @@ func (h *Hub) Run(){
             case player := <- h.Register:
                 h.Clients[player.Conn] = player
             case player := <- h.Unregister:
-                delete(h.Clients, player.Conn)
-            case msg := <- h.Broadcast:
-                for _, player := range h.Clients{
-                    switch msg.Scope {
-                    case ScopeGlobal:
-                        player.Conn.Write([]byte(msg.Content))
-                    case ScopeRoom:
-                        if player.Room == msg.Filter {
-                            player.Conn.Write([]byte(msg.Content))
-                        }
-                    case ScopeGroup:
-                        if player.Group != "" && player.Group == msg.Filter {
-                            player.Conn.Write([]byte(msg.Content))
+                if player.Group != "" {
+                    if group, exist := h.Groups[player.Group]; exist {
+                        restantes := group.RemoveMember(player.Conn)
+                        if restantes == 0 || group.Leader == player {
+                            delete(h.Groups, player.Group)
                         }
                     }
                 }
-        }
+			    delete(h.Clients, player.Conn)
+            case msg := <- h.Broadcast:
+                switch msg.Scope {
+                case ScopeGlobal:
+                    for _, player := range h.Clients {
+                        player.Conn.Write([]byte(msg.Content))
+                    }
+                case ScopeRoom:
+                    for _, player := range h.Clients {
+                        if player.Room == msg.Filter {
+                            player.Conn.Write([]byte(msg.Content))
+                        }
+                    }
+                case ScopeGroup:
+                    if group, exist :=  h.Groups[msg.Filter]; exist {
+                        group.Broadcast(msg.Content)
+                    }
+                }
+            }
     }
 }
+
