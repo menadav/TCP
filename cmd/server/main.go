@@ -2,15 +2,14 @@ package main
 
 import (
 	"answer_protocol/src/network"
+	"answer_protocol/src/speakserver"
 	"answer_protocol/src/constructor"
 	"fmt"
 	"net"
 )
 
-
-
 func main(){
-	listen, err := net.Listen("tcp", ":8082")
+	listen, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		fmt.Println("Error listen", err)
 		return
@@ -26,7 +25,7 @@ func main(){
 			continue
 		}
 		fmt.Println("Client connected from:", conn.RemoteAddr())
-		network.SendSuccess(conn, "hello proto=1")
+		speak.SendSuccess(conn, "hello proto=1")
 		go network.ClientAtender(conn, hub)
 	}
 }

@@ -1,4 +1,4 @@
-package network
+package speak
 
 import (
 	"fmt"

@@ -33,8 +33,10 @@ func WriteFromStdin(conn net.Conn) {
 func BroadcastMessage(name string, hub *models.Hub) TextProcessor {
     return func(msg string) {
         new_name := fmt.Sprintf("[%s]", name)
-        event := fmt.Sprintf("EVT GLOBAL CHAT %s %s\n", new_name, msg)
-        hub.Broadcast <- event
+        hub.Broadcast <- models.Message{
+			Scope:   models.ScopeGlobal,
+			Content: fmt.Sprintf("EVT GLOBAL CHAT %s %s\n", new_name, msg),
+		}
     }
 }
 

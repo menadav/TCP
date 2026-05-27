@@ -1,8 +1,10 @@
 package network
 
 import (
-    "answer_protocol/internal/models"
-    "answer_protocol/internal/constructor"
+    "answer_protocol/src/models"
+    "answer_protocol/src/constructor"
+    "answer_protocol/src/parse"
+    "answer_protocol/src/speakserver"
     "bufio"
     "net"
     "strings"
@@ -17,7 +19,7 @@ func Authentication(scanner *bufio.Scanner, conn net.Conn) string {
             err := scanner.Err()
             if err != nil {
                 if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-                    SendError(conn, 408, "CONNECTION_TIMEOUT")
+                    speak.SendError(conn, 408, "CONNECTION_TIMEOUT")
                 }
             }
             return ""
@@ -25,26 +27,27 @@ func Authentication(scanner *bufio.Scanner, conn net.Conn) string {
         name := scanner.Text()
         name_list := strings.Fields(name)
         if len(name_list) != 2 {
-            SendError(conn, 400, "malformed command CONNECT <name>")
+            speak.SendError(conn, 400, "malformed command CONNECT <name>")
             continue
         }
-        if name_list[0] == "CONNECT" {
+        name_clean := strings.ToUpper(name_list[0])
+        if  name_clean == "CONNECT" {
             name_p := name_list[1]
             if len(name_p) > 12 {
-                SendError(conn, 400, "max 12 characters")
+                speak.SendError(conn, 400, "max 12 characters")
                 continue
             } else if len(name_p) < 3{
-                SendError(conn, 400, "min 3 characters")
+                speak.SendError(conn, 400, "min 3 characters")
                 continue
             } else if !regexp.MustCompile(`^[a-zA-Z]+$`).MatchString(name_p){
-                SendError(conn, 400, "only letters")
+                speak.SendError(conn, 400, "only letters")
                 continue
             }
             conn.SetReadDeadline(time.Time{})
-            SendSuccess(conn, "connected")
+            speak.SendSuccess(conn, "connected")
             return name_p
         } else {
-            SendError(conn, 400, "malformed_command")
+            speak.SendError(conn, 400, "malformed_command")
         }
     }
 }
@@ -65,6 +68,8 @@ func ClientAtender(conn net.Conn, hub *models.Hub) {
         conn.Close()
     }()
     hub.Register <- player
-    processFunction := BroadcastMessage(name_p, hub)
+    processFunction := func(line string) {
+		parse.ParseCommandCli(line, player, hub)
+	}
     ReadServer(scanner, processFunction)
 }

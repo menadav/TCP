@@ -2,7 +2,6 @@ package models
 
 import (
     "net"
-    "answer_protocol/src/network"
 )
 
 type Scope string
@@ -14,10 +13,10 @@ const (
 )
 
 type Message struct{
-    Scope   Scope
-    Filter  string
-    Category
-    Content string
+    Scope       Scope
+    Filter      string
+    Category    string
+    Content     string
 }
 
 type Player struct{
@@ -53,10 +52,10 @@ func (h *Hub) Run(){
                         }
                     case ScopeGroup:
                         if player.Group != "" && player.Group == msg.Filter {
-                            network.SendEvent(player.Conn, msg.Category, msg.Content)
+                            player.Conn.Write([]byte(msg.Content))
                         }
                     }
-            }
+                }
         }
     }
 }
