@@ -26,6 +26,11 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 			speak.SendError(player.Conn, 400, "Only command, no arguments allowed")
 			return
 		}
+		if command == "QUIT" {
+			h.Unregister <- player
+			speak.SendSuccess(player.Conn, "bye")
+			return
+		}
 	case "MOVE":
 		if argument == "" {
 			speak.SendError(player.Conn, 400, "Move requires a destination")
@@ -53,7 +58,6 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 		}
 		partsGroup := strings.Split(argument, " ")
 		parseGroup(partsGroup, player, h)
-
 	default:
 		speak.SendError(player.Conn, 400, "Unknown command")
 		return
@@ -70,13 +74,15 @@ func parseChat(partsChat []string, player *models.Player, h *models.Hub) {
 		msg = models.Message{
 			Scope:   models.ScopeGlobal,
 			Filter:  "",
-			Content: fmt.Sprintf("GLOBAL CHAT %s %s\n", player.Name, text),
+			Category: "GLOBAL",
+			Content: fmt.Sprintf("CHAT %s %s", player.Name, text),
 		}
 	case "ROOM":
 		msg = models.Message{
 			Scope:   models.ScopeRoom,
 			Filter:  player.Room,
-			Content: fmt.Sprintf("ROOM CHAT %s %s\n", player.Name, text),
+			Category: "ROOM",
+			Content: fmt.Sprintf("CHAT %s %s", player.Name, text),
 		}
 	case "GROUP":
 		if player.Group == "" {
@@ -86,7 +92,8 @@ func parseChat(partsChat []string, player *models.Player, h *models.Hub) {
 		msg = models.Message{
 			Scope:    models.ScopeGroup,
 			Filter:   player.Group,
-			Content:  fmt.Sprintf("GROUP CHAT %s %s\n", player.Name, text),
+			Category: "GROUP",
+			Content:  fmt.Sprintf("CHAT %s %s", player.Name, text),
 		}
 	default:
 		speak.SendError(player.Conn, 400, "Unknown chat scope. Use GLOBAL, ROOM, or GROUP")
@@ -175,9 +182,14 @@ func parseGroup(partsGroup []string, player *models.Player, h *models.Hub){
 			speak.SendError(player.Conn, 404, "No active group found with that leader")
 			return
 		}
+		h.Broadcast <- models.Message{
+			Scope:    models.ScopeGroup,
+			Filter:   targetGroup.Id,
+			Category: "GROUP",
+			Content:  "JOIN " + player.Name,
+		}
 		targetGroup.AddMember(player.Conn, player)
 		player.Group = targetGroup.Id
-		targetGroup.Broadcast(fmt.Sprintf("EVT GROUP JOINED %s", player.Name))
 		speak.SendSuccess(player.Conn, fmt.Sprintf("group=%s", targetGroup.Id))
 	case "LEAVE":
         if player.Group == "" {
@@ -190,11 +202,21 @@ func parseGroup(partsGroup []string, player *models.Player, h *models.Hub){
             player.Group = ""
             speak.SendSuccess(player.Conn, "")
             if All_group == 0 || group.Leader == player {
-                group.Broadcast("EVT GROUP LEAVE " + player.Name) 
+                h.Broadcast <- models.Message{
+					Scope:    models.ScopeGroup,
+					Filter:   groupID,
+					Category: "GROUP",
+					Content:  "LEAVE " + player.Name,
+				}
                 delete(h.Groups, groupID)
             } else {
-                group.Broadcast(fmt.Sprintf("EVT GROUP LEAVE %s", player.Name))
-            }
+                h.Broadcast <- models.Message{
+					Scope:    models.ScopeGroup,
+					Filter:   groupID,
+					Category: "GROUP",
+					Content:  "LEAVE " + player.Name,
+				}
+			}
         }
 	default:
 		speak.SendError(player.Conn, 400, "Unknown group action. Use CREATE, INVITE, or JOIN")

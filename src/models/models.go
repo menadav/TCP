@@ -3,7 +3,7 @@ package models
 import (
     "net"
     "sync"
-
+    "answer_protocol/src/speakserver"
 )
 
 type Scope string
@@ -17,6 +17,7 @@ const (
 type Message struct{
     Scope       Scope
     Filter      string
+    Category    string
     Content     string
 }
 
@@ -55,12 +56,11 @@ func (g *Group) RemoveMember(conn net.Conn) int {
 	return len(g.Members)
 }
 
-func (g *Group) Broadcast(content string) {
+func (g *Group) Broadcast(msg Message) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
-	msgBytes := []byte(content + "\n")
 	for _, player := range g.Members {
-		player.Conn.Write(msgBytes)
+		speak.SendEvent(player.Conn, msg.Category, msg.Content)
 	}
 }
 
@@ -68,8 +68,22 @@ func (h *Hub) Run(){
     for {
         select {
             case player := <- h.Register:
+                enter := "PRESENCE ENTER " + player.Name
+                for _, p := range h.Clients {
+                    if p.Room == player.Room {
+                        speak.SendEvent(p.Conn, "ROOM", enter)
+                    }
+                }
                 h.Clients[player.Conn] = player
             case player := <- h.Unregister:
+                leave := "PRESENCE LEAVE " + player.Name
+                for _, p := range h.Clients {
+                        if p.Room == player.Room {
+                            if player != p {
+                                speak.SendEvent(p.Conn, "ROOM", leave)
+                            }
+                        }
+                    }
                 if player.Group != "" {
                     if group, exist := h.Groups[player.Group]; exist {
                         restantes := group.RemoveMember(player.Conn)
@@ -83,17 +97,17 @@ func (h *Hub) Run(){
                 switch msg.Scope {
                 case ScopeGlobal:
                     for _, player := range h.Clients {
-                        player.Conn.Write([]byte(msg.Content))
+                        speak.SendEvent(player.Conn, msg.Category, msg.Content)
                     }
                 case ScopeRoom:
                     for _, player := range h.Clients {
                         if player.Room == msg.Filter {
-                            player.Conn.Write([]byte(msg.Content))
+                            speak.SendEvent(player.Conn, msg.Category, msg.Content)
                         }
                     }
                 case ScopeGroup:
                     if group, exist :=  h.Groups[msg.Filter]; exist {
-                        group.Broadcast(msg.Content)
+                        group.Broadcast(msg)
                     }
                 }
             }

@@ -48,7 +48,7 @@ func Authentication(scanner *bufio.Scanner, conn net.Conn, h *models.Hub) string
                 continue
             }
             conn.SetReadDeadline(time.Time{})
-            speak.SendSuccess(conn, "connected")
+            speak.SendSuccess(conn, "welcome")
             return name_p
         } else {
             speak.SendError(conn, 400, "malformed_command")
