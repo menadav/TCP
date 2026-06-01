@@ -62,7 +62,7 @@ func parseGroup(partsGroup []string, player *models.Player, h *models.Hub){
 			return
 		}
 		if targetPlayer.Group != "" {
-			speak.SendError(player.Conn, 403, "User is already in another group")
+			speak.SendError(player.Conn, 403, "ALREADY_IN_GROUP	")
 			return
 		}
 		speak.SendEvent(targetPlayer.Conn, "GROUP INVITE", player.Name )

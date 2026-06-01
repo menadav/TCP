@@ -26,30 +26,30 @@ func Authentication(scanner *bufio.Scanner, conn net.Conn, h *models.Hub) string
         name := scanner.Text()
         name_list := strings.Fields(name)
         if len(name_list) != 2 {
-            speak.SendError(conn, 400, "malformed command CONNECT <name>")
+            speak.SendError(conn, 400, "MALFORMED_COMMAND_CONNECT <name>")
             continue
         }
         name_clean := strings.ToUpper(name_list[0])
         if  name_clean == "CONNECT" {
             name_p := name_list[1]
             if len(name_p) > 12 {
-                speak.SendError(conn, 400, "max 12 characters")
+                speak.SendError(conn, 203, "MAX_12_CHARACTERS")
                 continue
             } else if len(name_p) < 3{
-                speak.SendError(conn, 400, "min 3 characters")
+                speak.SendError(conn, 400, "MIN_3_CHARACTERS")
                 continue
             } else if !regexp.MustCompile(`^[a-zA-Z]+$`).MatchString(name_p){
-                speak.SendError(conn, 400, "only letters")
+                speak.SendError(conn, 202, "ONLY_LETTERS")
                 continue
             } else if utils.ExistName(h.Clients, name_p) {
-                speak.SendError(conn, 400, "The name is already chosen, please choose another.")
+                speak.SendError(conn, 201, "NAME_IN_USE")
                 continue
             }
             conn.SetReadDeadline(time.Time{})
-            speak.SendSuccess(conn, "welcome")
+            speak.SendSuccess(conn, "connected")
             return name_p
         } else {
-            speak.SendError(conn, 400, "malformed_command")
+            speak.SendError(conn, 202, "MALFORMED_COMMAND")
         }
     }
 }

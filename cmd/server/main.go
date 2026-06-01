@@ -4,6 +4,7 @@ import (
 	"answer_protocol/src/network"
 	"answer_protocol/src/speakserver"
 	"answer_protocol/src/constructor"
+	"answer_protocol/src/world"
 	"fmt"
 	"net"
 )
@@ -15,6 +16,12 @@ func main(){
 		return
 	}
 	defer listen.Close()
+	data, err := world.LoadWorld("data.yaml")
+	if err != nil {
+		fmt.Println("Error load world", err)
+		return
+	}
+	fmt.Println(data)
 	hub := constructor.NewHub()
 	go hub.Run()
 	fmt.Println("Server ready on the port :")

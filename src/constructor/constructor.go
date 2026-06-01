@@ -5,6 +5,14 @@ import (
 	"net"
 )
 
+func NewWorld() *models.World{
+	return &models.World{
+		Rooms:	make(map[string]*models.Room),
+		Items:	make(map[string]*models.Item),
+		Npcs:	make(map[string]*models.Npc),
+	}
+}
+
 func NewHub() *models.Hub{
 	return &models.Hub{
 		Register:   make(chan *models.Player),

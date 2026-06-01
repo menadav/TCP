@@ -1,0 +1,116 @@
+items:
+  - id: "item_ale"
+    name: "Prancing Pony Ale"
+    description: "A pint of frothy, dark ale that restores a traveler's spirit."
+    obtainable: true
+
+  - id: "item_athelas"
+    name: "Athelas Leaves"
+    description: "Also known as Kingsfoil. A legendary healing herb capable of curing severe wounds."
+    obtainable: true
+
+  - id: "item_phial"
+    name: "Phial of Galadriel"
+    description: "A crystal vial capturing the pure light of Eärendil's star to illuminate dark places."
+    obtainable: true
+
+  - id: "item_mithril"
+    name: "Mithril Shirt"
+    description: "A coat of mail light as a feather but harder than dragon scales. It is locked behind glass."
+    obtainable: false
+
+npcs:
+  - id: "npc_frodo"
+    name: "Frodo Baggins"
+    description: "A small, weary hobbit bearing an incredibly heavy burden around his neck."
+    dialogue:
+      - "The One Ring must be cast into the fires..."
+      - "Will you aid me in taking it to Mount Doom?"
+    hp: 50
+    is_hostile: false
+    quest_id: "quest_destroy_ring"
+
+  - id: "npc_aragorn"
+    name: "Aragorn"
+    description: "A stern-faced Ranger of the North holding a broken blade."
+    dialogue:
+      - "A wounded companion needs Athelas leaves urgently."
+      - "Shadows are lengthening in the north. Keep your sword drawn."
+    hp: 200
+    is_hostile: false
+    quest_id: "quest_heal_wounded"
+
+  - id: "npc_gollum"
+    name: "Gollum"
+    description: "A wretched, emaciated creature crouching slily behind a jagged rock."
+    dialogue:
+      - "It's ours! It's our own! They stole it from us!"
+      - "Thieves! Murderers! We hates them!"
+    hp: 60
+    is_hostile: true
+    quest_id: ""
+
+rooms:
+  - id: "start"
+    name: "The Shire"
+    description: "A peaceful, rolling valley filled with green hills and cozy hobbit-holes. The smell of pipe-weed fills the air. Pathways lead North, East, and West."
+    exist:
+      NORTH: "rivendell"
+      WEST: "bree"
+      EAST: "lothlorien"
+    items: []
+    npcs:
+      - "npc_frodo"
+
+  - id: "bree"
+    name: "The Prancing Pony Inn"
+    description: "A rustic, noisy tavern in the village of Bree. Travelers from all corners huddle around fireplaces to escape the pouring rain."
+    exist:
+      NORTH: "weathertop"
+      EAST: "start"
+    items:
+      - "item_ale"
+    npcs: []
+
+  - id: "weathertop"
+    name: "Weathertop (Amon Sul)"
+    description: "The crumbling ruins of an ancient watchtower crowning a steep, barren hill. A biting wind howls through the fractured dark stones."
+    exist:
+      SOUTH: "bree"
+      EAST: "rivendell"
+    items:
+      - "item_athelas"
+    npcs: []
+
+  - id: "lothlorien"
+    name: "Lothlorien Woods"
+    description: "A mystical, luminescent forest bathed in a perpetual silver glow. Stately Mallorn trees carpet the ground with golden leaves."
+    exist:
+      WEST: "start"
+    items:
+      - "item_phial"
+    npcs:
+      - "npc_aragorn"
+
+  - id: "rivendell"
+    name: "The Valley of Rivendell"
+    description: "The Last Homely House East of the Sea. An Elven sanctuary hidden inside a steep valley, echoing with the peaceful music of distant waterfalls."
+    exist:
+      SOUTH: "start"
+      WEST: "weathertop"
+      NORTH: "moria"
+    items: []
+    npcs: []
+
+  - id: "moria"
+    name: "The Mines of Moria (Khazad-dum)"
+    description: "A colossal, cavernous city carved into the roots of the mountains. Infinite pillars rise into pitch-black vaults high above."
+    exist:
+      SOUTH: "rivendell"
+      NORTH: "cirith_ungol"
+    items:
+      - "item_mithril"
+    npcs: []
+
+  - id: "cirith_ungol"
+    name: "Cirith Ungol Pass"

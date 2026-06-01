@@ -79,3 +79,9 @@ if err != nil {return} -> No hay try,except. Se comprueba los errores similar a 
 go.mod
     Es un requeriments.txt 
 ===================================================================================================================================================
+2: enp4s0f0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 18:7e:b9:08:7a:a4 brd ff:ff:ff:ff:ff:ff
+    inet 10.11.14.6/16 metric 100 brd 10.11.255.255 scope global enp4s0f0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::1a7e:b9ff:fe08:7aa4/64 scope link 
+       valid_lft forever preferred_lft forever
