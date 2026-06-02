@@ -24,12 +24,13 @@ func NewHub(data *models.World) *models.Hub{
 	}
 }
 
-func NewPlayer(conn_st string, conn net.Conn, name string, startRoom string) *models.Player{
+func NewPlayer(conn_st string, conn net.Conn, name string, startRoom *models.Room) *models.Player{
 	return &models.Player{
 		Id: 	conn_st,
 		Conn:	conn,
 		Name: 	name,
 		Room:	startRoom,
 		Group:	"",
+		Inventory: []*models.Item{},
 	}
 }

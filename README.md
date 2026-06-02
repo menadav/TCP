@@ -66,6 +66,9 @@ Fase 9: Unificar Data con Hub.
 
 Fase 10: Crear Comandos Mundo.
 
+Fase 11: Actualizar funciones para interacturar con el mundo
+        Inventory, Look, Status
+
 ===================================================================================================================================================
 
 package main -> Obligatorio para poder compilar.

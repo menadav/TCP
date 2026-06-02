@@ -6,6 +6,7 @@ import (
     "fmt"
     "net"
     "os"
+    "strings"
 )
 
 type TextProcessor func(string)
@@ -19,6 +20,9 @@ func StartScanner(scanner *bufio.Scanner, process TextProcessor) {
         process(scanner.Text())
     }
     if err := scanner.Err(); err != nil {
+        if strings.Contains(err.Error(), "use of closed network connection") {
+            return
+        }
         fmt.Println("ERROR scanner:", err)
     }
 }

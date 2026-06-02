@@ -31,5 +31,21 @@ func LoadWorld(path string)(*models.World, error){
     for _, npc := range yamlData.Npcs {
         world.Npcs[npc.ID] = npc
     }
+	for _, room := range world.Rooms {
+        for _, itemID := range room.YamlItems {
+            if itemReal, existe := world.Items[itemID]; existe {
+                room.Items = append(room.Items, itemReal)
+            } else {
+                fmt.Printf("Advertencia: El ítem '%s' requerido en la sala '%s' no existe en la sección global de ítems.\n", itemID, room.Id)
+            }
+        }
+        for _, npcID := range room.YamlNpcs {
+            if npcReal, existe := world.Npcs[npcID]; existe {
+                room.Npcs = append(room.Npcs, npcReal)
+            } else {
+                fmt.Printf("Advertencia: El NPC '%s' requerido en la sala '%s' no existe en la sección global de NPCs.\n", npcID, room.Id)
+            }
+        }
+    }
     return world, nil
 }

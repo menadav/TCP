@@ -23,7 +23,7 @@ func parseChat(partsChat []string, player *models.Player, h *models.Hub) {
 	case "ROOM":
 		msg = models.Message{
 			Scope:   models.ScopeRoom,
-			Filter:  player.Room,
+			Filter:  player.Room.Id,
 			Category: "ROOM",
 			Content: fmt.Sprintf("CHAT %s %s", player.Name, text),
 		}

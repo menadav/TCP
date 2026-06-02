@@ -16,9 +16,23 @@ func ClientAtender(conn net.Conn, hub *models.Hub) {
         conn.Close()
         return
     }
-    player := constructor.NewPlayer(conn.RemoteAddr().String(), conn, name_p, "loc.start")
+    start := hub.World.Rooms["start"]
+    player := constructor.NewPlayer(conn.RemoteAddr().String(), conn, name_p, start)
+    if start != nil {
+        start.Mu.Lock()  
+        if start.Players == nil {
+            start.Players = make(map[string]*models.Player)
+        }
+        start.Players[player.Name] = player
+        start.Mu.Unlock()
+    }
     defer func() {
         if name_p != "" {
+            if player.Room != nil {
+                player.Room.Mu.Lock()
+                delete(player.Room.Players, player.Name)
+                player.Room.Mu.Unlock()
+            }
             hub.Unregister <- player
         }
         conn.Close()

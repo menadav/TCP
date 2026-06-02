@@ -23,7 +23,7 @@ func (h *Hub) Run(){
                 h.mu.Lock()
                 enter := "PRESENCE ENTER " + player.Name
                 for _, p := range h.Clients {
-                    if p.Room == player.Room {
+                    if p.Room.Id == player.Room.Id {
                         speak.SendEvent(p.Conn, "ROOM", enter)
                     }
                 }
@@ -33,7 +33,7 @@ func (h *Hub) Run(){
                 h.mu.Lock()
                 leave := "PRESENCE LEAVE " + player.Name
                 for _, p := range h.Clients {
-                        if p.Room == player.Room {
+                        if p.Room.Id == player.Room.Id {
                             if player != p {
                                 speak.SendEvent(p.Conn, "ROOM", leave)
                             }
@@ -58,7 +58,7 @@ func (h *Hub) Run(){
                     }
                 case ScopeRoom:
                     for _, player := range h.Clients {
-                        if player.Room == msg.Filter {
+                        if player.Room.Id == msg.Filter {
                             speak.SendEvent(player.Conn, msg.Category, msg.Content)
                         }
                     }

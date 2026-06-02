@@ -1,6 +1,9 @@
 package models
 
-import "net"
+import (
+    "net"
+    "sync"
+)
 
 type Scope string
 
@@ -18,9 +21,18 @@ type Message struct {
 }
 
 type Player struct {
-    Id    string
-    Conn  net.Conn
-    Name  string
-    Room  string
-    Group string
+    mu          sync.RWMutex
+    Id          string
+    Conn        net.Conn
+    Name        string
+    Room        *Room
+    Group       string
+    Inventory   []*Item
+}
+
+func (p *Player) GetInventory() []*Item {
+    p.mu.RLock()
+    defer p.mu.RUnlock()
+    inventory := p.Inventory
+    return inventory
 }

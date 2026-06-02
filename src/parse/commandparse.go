@@ -3,6 +3,7 @@ package parse
 import (
 	"answer_protocol/src/models"
 	"answer_protocol/src/speakserver"
+	"answer_protocol/src/game"
 	"strings"
 )
 
@@ -23,9 +24,21 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 			speak.SendError(player.Conn, 400, "Only command, no arguments allowed")
 			return
 		}
+		if command == "LOOK"{
+			game.LookRoom(player, h)
+			return
+		}
+		if command == "INVENTORY"{
+			game.LookInventory(player)
+			return
+    	}
+		if command == "STATUS"{
+			game.LookStatus(player)
+			return
+		}
 		if command == "QUIT" {
-			h.Unregister <- player
 			speak.SendSuccess(player.Conn, "bye")
+			player.Conn.Close()
 			return
 		}
 	case "MOVE":
