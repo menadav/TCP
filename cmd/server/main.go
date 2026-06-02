@@ -1,9 +1,9 @@
 package main
 
 import (
+	"answer_protocol/src/constructor"
 	"answer_protocol/src/network"
 	"answer_protocol/src/speakserver"
-	"answer_protocol/src/constructor"
 	"answer_protocol/src/world"
 	"fmt"
 	"net"
@@ -21,8 +21,7 @@ func main(){
 		fmt.Println("Error load world", err)
 		return
 	}
-	fmt.Println(data)
-	hub := constructor.NewHub()
+	hub := constructor.NewHub(data)
 	go hub.Run()
 	fmt.Println("Server ready on the port :")
 	for {
@@ -32,7 +31,7 @@ func main(){
 			continue
 		}
 		fmt.Println("Client connected from:", conn.RemoteAddr())
-		speak.SendSuccess(conn, "hello proto=1")
 		go network.ClientAtender(conn, hub)
+		speak.SendSuccess(conn, "hello proto=1")
 	}
 }

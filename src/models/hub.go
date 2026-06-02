@@ -1,22 +1,26 @@
 package models
 
 import (
-    "net"
-    "answer_protocol/src/speakserver"
+	"answer_protocol/src/speakserver"
+	"net"
+    "sync"
 )
 
 type Hub struct {
-    Register   chan *Player
-    Unregister chan *Player
-    Broadcast  chan Message
-    Clients    map[net.Conn]*Player
-    Groups     map[string]*Group
+    Register    chan *Player
+    Unregister  chan *Player
+    Broadcast   chan Message
+    Clients     map[net.Conn]*Player
+    Groups      map[string]*Group
+    mu          sync.RWMutex
+    World       *World
 }
 
 func (h *Hub) Run(){
     for {
         select {
             case player := <- h.Register:
+                h.mu.Lock()
                 enter := "PRESENCE ENTER " + player.Name
                 for _, p := range h.Clients {
                     if p.Room == player.Room {
@@ -24,7 +28,9 @@ func (h *Hub) Run(){
                     }
                 }
                 h.Clients[player.Conn] = player
+                h.mu.Unlock()
             case player := <- h.Unregister:
+                h.mu.Lock()
                 leave := "PRESENCE LEAVE " + player.Name
                 for _, p := range h.Clients {
                         if p.Room == player.Room {
@@ -42,7 +48,9 @@ func (h *Hub) Run(){
                     }
                 }
 			    delete(h.Clients, player.Conn)
+                h.mu.Unlock()
             case msg := <- h.Broadcast:
+                h.mu.RLock()
                 switch msg.Scope {
                 case ScopeGlobal:
                     for _, player := range h.Clients {
@@ -59,6 +67,7 @@ func (h *Hub) Run(){
                         group.Broadcast(msg)
                     }
                 }
+                h.mu.RUnlock()
             }
     }
 }

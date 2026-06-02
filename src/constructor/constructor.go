@@ -13,13 +13,14 @@ func NewWorld() *models.World{
 	}
 }
 
-func NewHub() *models.Hub{
+func NewHub(data *models.World) *models.Hub{
 	return &models.Hub{
 		Register:   make(chan *models.Player),
 		Unregister: make(chan *models.Player),
 		Broadcast:  make(chan models.Message),
 		Clients: 	make(map[net.Conn]*models.Player),
 		Groups:     make(map[string]*models.Group),
+		World:		data,
 	}
 }
 

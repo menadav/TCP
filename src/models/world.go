@@ -24,7 +24,7 @@ type Item struct {
 
 type Room struct{
 	Mu			sync.RWMutex		`json:"-" yaml:"-"`
-	Id			string				`json:"id" yaml:"id`
+	Id			string				`json:"id" yaml:"id"`
 	Name		string				`json:"name" yaml:"name"`
 	Description	string				`json:"description" yaml:"description"`
 	Exist		map[string]string	`json:"exist" yaml:"exist"`

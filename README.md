@@ -1,4 +1,6 @@
 ===================================================================================================================================================
+
+-Explicacion Breve.
 Go es un lenguaje que compila a diferencia de python. Tambien tiene un Garbage Collector que no hace falta liberar memoria de variables.
 - Concurrencia:
 Go Destaca por su concurrencia es trabajo con Threads como con packete "net" crea hilos internamete eficientes ocupado casi nada de memoria.
@@ -12,12 +14,13 @@ Memory  1MB    2KB  (Pero puede ir creciendo)
 Create  slow   fast
 
 ===================================================================================================================================================
+
 Flujo  Programa:
 start -> go run cmd/server/main.go
 - [server]Escucho puerto.                               ->	listen, err := net.Listen("tcp", ":8080")
 - [server]Si cierra el programa cierra la net		    -> 	defer listen.Close()
 - [server]Construimos un hub que contendra los canales  -> 	hub := constructor.NewHub()
-- [server]La hacemos trabajar en segundo plano
+- [server]La hacemos trabajar en segundo plano hilo     ->  go hub.run()
 - [server]Entramos while infinito (for {})
 - [server]Se freezea para esperar la llamada de un user ->	conn, err := listen.Accept()
 go run cmd/client-cli/main.go
@@ -32,13 +35,15 @@ go run cmd/client-cli/main.go
 - [client]Podra escribir por terminal , que enviara [server] con su conexion de net.dial
 Conseguimos una comunicacion Bidimensional [server]---[client]
 
+
 ===================================================================================================================================================
+
 
 FASE 1: Conectar server 
 	Lograr que el Servidor acepte un cliente, le mande un saludo, y que el Cliente (CLI) lo reciba y lo pinte en pantalla usando tu paquete network.
 
-FASE 2: Recibir llamadas cli -> server
-	Lograr que el Cliente envie mensaje al server y le devuelva una respuesta simulada
+FASE 2: Recibir llamadas cli -> server y Concurrirlas con rutinas
+	Lograr que el Cliente envie mensaje al server y le devuelva una respuesta simultanea con hilos
 
 Fase 3: Recibir llamadas todos los clientes.
 	Lograr que el cliente envie mensaje al server y devuelva a TODOS Broadcast .
@@ -48,6 +53,18 @@ Fase 4: Autentificador
 
 Fase 5: Crear Formato Chat.
     Depende lo que escriba el usuario hacer una accion o otra. Mirar, Escribir todos.
+
+Fase 6: Crear Formato Grupo.
+    Que jugador interacione con invitar, uniser dejar grupo.
+
+Fase 7: Crear Parseo lineas jugador.
+    Que jugador depende lo que escriba se parse.
+
+Fase 8: Crear Struct World y constructor.
+
+Fase 9: Unificar Data con Hub.
+
+Fase 10: Crear Comandos Mundo.
 
 ===================================================================================================================================================
 
@@ -76,9 +93,16 @@ defer -> Is finally like a python
 if err != nil {return} -> No hay try,except. Se comprueba los errores similar a C.
 
 ===================================================================================================================================================
+
 go.mod
     Es un requeriments.txt 
+
 ===================================================================================================================================================
+
+go.sum 
+
+===================================================================================================================================================
+
 2: enp4s0f0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
     link/ether 18:7e:b9:08:7a:a4 brd ff:ff:ff:ff:ff:ff
     inet 10.11.14.6/16 metric 100 brd 10.11.255.255 scope global enp4s0f0
