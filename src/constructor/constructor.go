@@ -10,6 +10,7 @@ func NewWorld() *models.World{
 		Rooms:	make(map[string]*models.Room),
 		Items:	make(map[string]*models.Item),
 		Npcs:	make(map[string]*models.Npc),
+		Quest:	make(map[string]*models.Quest),
 	}
 }
 
@@ -32,5 +33,9 @@ func NewPlayer(conn_st string, conn net.Conn, name string, startRoom *models.Roo
 		Room:	startRoom,
 		Group:	"",
 		Inventory: []*models.Item{},
+		Max_HP:		100,
+		HP:			100,
+		Status:		"healthy",
+		Quests:		make(map[string]*models.PlayerQuest),
 	}
 }

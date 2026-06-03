@@ -25,15 +25,23 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 			return
 		}
 		if command == "LOOK"{
-			game.LookRoom(player, h)
+			game.ShowRoom(player, h)
 			return
 		}
 		if command == "INVENTORY"{
-			game.LookInventory(player)
+			game.ShowInventory(player)
 			return
     	}
 		if command == "STATUS"{
-			game.LookStatus(player)
+			game.ShowStatus(player)
+			return
+		}
+		if command == "QUESTS"{
+			game.ShowQuest(player)
+			return
+		}
+		if command == "WHO"{
+			game.ShowWho(player, h)
 			return
 		}
 		if command == "QUIT" {

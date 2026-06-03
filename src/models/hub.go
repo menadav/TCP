@@ -72,3 +72,14 @@ func (h *Hub) Run(){
     }
 }
 
+func (h *Hub) GetOnlinePlayersNames() []string {
+    h.mu.RLock()
+    defer h.mu.RUnlock()
+    playerNames := make([]string, 0)
+    for _, player := range h.Clients {
+        if player != nil {
+            playerNames = append(playerNames, player.GetName())
+        }
+    }
+    return playerNames
+}

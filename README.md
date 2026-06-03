@@ -67,8 +67,9 @@ Fase 9: Unificar Data con Hub.
 Fase 10: Crear Comandos Mundo.
 
 Fase 11: Actualizar funciones para interacturar con el mundo
-        Inventory, Look, Status
+        Inventory, Look, Status, Who   Importante Checkear misiones Quests
 
+Fase 12: Crear comandos de desplazamiento.
 ===================================================================================================================================================
 
 package main -> Obligatorio para poder compilar.

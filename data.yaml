@@ -114,3 +114,13 @@ rooms:
 
   - id: "cirith_ungol"
     name: "Cirith Ungol Pass"
+quests:
+  - id: "quest_destroy_ring"
+    description: "Ayuda a Frodo a llevar el Anillo Único hasta el Monte del Destino."
+    reward: "item_mithril"
+    status: "available"
+
+  - id: "quest_heal_wounded"
+    description: "Busca hojas de Athelas urgentemente para curar a un compañero herido."
+    reward: "item_phial"
+    status: "available"

@@ -31,6 +31,9 @@ func LoadWorld(path string)(*models.World, error){
     for _, npc := range yamlData.Npcs {
         world.Npcs[npc.ID] = npc
     }
+    for _, quest := range yamlData.Quest {
+        world.Quest[quest.ID] = quest
+    }
 	for _, room := range world.Rooms {
         for _, itemID := range room.YamlItems {
             if itemReal, existe := world.Items[itemID]; existe {

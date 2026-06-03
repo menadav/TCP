@@ -2,8 +2,14 @@ package models
 
 import(
 	"sync"
-	"encoding/json"
 )
+
+type Quest struct {
+    ID          string	`json:"quest_id" yaml:"id"`
+    Description string	`json:"description" yaml:"description"`
+    Reward      string	`json:"reward" yaml:"reward"`
+    Status      string	`json:"status"`
+}
 
 type Npc struct {
 	ID			string				`json:"id" yaml:"id"`
@@ -40,62 +46,12 @@ type World struct{
 	Rooms		map[string]*Room
 	Items		map[string]*Item
 	Npcs		map[string]*Npc
+	Quest		map[string]*Quest
 }
 
 type YamlData struct {
-		Rooms []*Room `yaml:"rooms"`
-		Items []*Item `yaml:"items"`
-		Npcs  []*Npc  `yaml:"npcs"`
-}
-
-type LookResponse struct {
-	Room    RoomData `json:"room"`
-	Players []string `json:"players"`
-	Items   []string `json:"items"`
-	Npcs    []string `json:"npcs"`
-}
-
-type RoomData struct {
-	Id          string            `json:"id"`
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Exits       map[string]string `json:"exits"`
-}
-
-func (r *Room) GetStateJSON() (string, error) {
-	r.Mu.RLock()
-	defer r.Mu.RUnlock()
-	playersList := []string{}
-	for name, _ := range r.Players {
-		playersList = append(playersList, name)
-	}
-	itemsList := []string{}
-	for _, item := range r.Items {
-		if item != nil {
-			itemsList = append(itemsList, item.ID) 
-		}
-	}
-	npcsList := []string{}
-	for _, npc := range r.Npcs {
-		if npc != nil {
-			npcsList = append(npcsList, npc.ID) 
-		}
-	}
-	response := LookResponse{
-		Room: RoomData{
-			Id:          r.Id,
-			Name:        r.Name,
-			Description: r.Description,
-			Exits:       r.Exist, 
-		},
-		Players: playersList,
-		Items:   itemsList,
-		Npcs:    npcsList,
-	}
-	jsonData, err := json.Marshal(response)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonData), nil
+		Rooms []*Room	`yaml:"rooms"`
+		Items []*Item	`yaml:"items"`
+		Npcs  []*Npc	`yaml:"npcs"`
+		Quest []*Quest	`yaml:"quest"`
 }
