@@ -12,6 +12,10 @@ func parseChat(partsChat []string, player *models.Player, h *models.Hub) {
 
 	scopeStr := strings.ToUpper(partsChat[0])
 	text := partsChat[1]
+	if len(text) > 40 {
+		speak.SendError(player.Conn, 203, "TEXT_TO_LONG")
+		return
+	}
 	switch scopeStr {
 	case "GLOBAL":
 		msg = models.Message{

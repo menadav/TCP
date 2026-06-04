@@ -2,6 +2,7 @@ package models
 
 import(
 	"sync"
+	"fmt"
 )
 
 type Quest struct {
@@ -29,7 +30,7 @@ type Item struct {
 } 
 
 
-type Room struct{
+type Room struct {
 	Mu			sync.RWMutex		`json:"-" yaml:"-"`
 	Id			string				`json:"id" yaml:"id"`
 	Name		string				`json:"name" yaml:"name"`
@@ -42,7 +43,7 @@ type Room struct{
     YamlNpcs    []string            `json:"-" yaml:"npcs"`
 }
 
-type World struct{
+type World struct {
 	Rooms		map[string]*Room
 	Items		map[string]*Item
 	Npcs		map[string]*Npc
@@ -54,4 +55,31 @@ type YamlData struct {
 		Items []*Item	`yaml:"items"`
 		Npcs  []*Npc	`yaml:"npcs"`
 		Quest []*Quest	`yaml:"quest"`
+}
+
+
+func (w *World) MovePlayer(player *Player, direction string) error {
+    actualRoom := player.Room
+    if actualRoom == nil {
+        return fmt.Errorf("el jugador no está en ninguna sala")
+    }
+    nextRoomID, exists := actualRoom.Exist[direction]
+    if !exists {
+        return fmt.Errorf("no hay salida hacia el %s", direction)
+    }
+    actualRoom.Mu.Lock()
+    delete(actualRoom.Players, player.Name)
+    actualRoom.Mu.Unlock()
+    nextRoom, roomExists := w.Rooms[nextRoomID]
+    if !roomExists {
+        return fmt.Errorf("error grave: la sala %s no existe en el mundo", nextRoomID)
+    }
+    nextRoom.Mu.Lock()
+    if nextRoom.Players == nil {
+        nextRoom.Players = make(map[string]*Player)
+    }
+    nextRoom.Players[player.Name] = player
+    nextRoom.Mu.Unlock()
+    player.Room = nextRoom
+    return nil
 }

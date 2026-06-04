@@ -62,5 +62,5 @@ func ShowWho(player *models.Player, h *models.Hub) {
         speak.SendError(player.Conn, 900, "INTERNAL_ERROR")
         return
     }
-    speak.SendSuccess(player.Conn, string(bytesJSON))
+    speak.SendSuccess(player.Conn, "players=" + string(bytesJSON))
 }

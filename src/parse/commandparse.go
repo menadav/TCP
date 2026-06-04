@@ -54,6 +54,14 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 			speak.SendError(player.Conn, 400, "Move requires a destination")
 			return
 		}
+		argument = strings.ToUpper(argument)
+		switch argument {
+		case "NORTH", "SOUTH", "WEST", "EAST":
+			game.MapMove(player, argument, h)
+			return
+		default:
+			speak.SendError(player.Conn, 301, "NO_EXIT")
+		}
 	case "CHAT":
 		if argument == "" {
 			speak.SendError(player.Conn, 400, "Chat requires a scope and a message")

@@ -21,24 +21,12 @@ func (h *Hub) Run(){
         select {
             case player := <- h.Register:
                 h.mu.Lock()
-                enter := "PRESENCE ENTER " + player.Name
-                for _, p := range h.Clients {
-                    if p.Room.Id == player.Room.Id {
-                        speak.SendEvent(p.Conn, "ROOM", enter)
-                    }
-                }
+                h.innerNotifyRoomEnter(player, player.Room.Id)
                 h.Clients[player.Conn] = player
                 h.mu.Unlock()
             case player := <- h.Unregister:
                 h.mu.Lock()
-                leave := "PRESENCE LEAVE " + player.Name
-                for _, p := range h.Clients {
-                        if p.Room.Id == player.Room.Id {
-                            if player != p {
-                                speak.SendEvent(p.Conn, "ROOM", leave)
-                            }
-                        }
-                    }
+                h.innerNotifyRoomLeave(player, player.Room.Id)
                 if player.Group != "" {
                     if group, exist := h.Groups[player.Group]; exist {
                         restantes := group.RemoveMember(player.Conn)
@@ -82,4 +70,34 @@ func (h *Hub) GetOnlinePlayersNames() []string {
         }
     }
     return playerNames
+}
+
+func (h *Hub) NotifyRoomLeave(player *Player, roomID string) {
+    h.mu.RLock()
+    defer h.mu.RUnlock()
+    h.innerNotifyRoomLeave(player, roomID)
+}
+
+func (h *Hub) NotifyRoomEnter(player *Player, roomID string) {
+    h.mu.RLock()
+    defer h.mu.RUnlock()
+    h.innerNotifyRoomEnter(player, roomID)
+}
+
+func (h *Hub) innerNotifyRoomLeave(player *Player, roomID string) {
+    leaveMsg := "PRESENCE LEAVE " + player.Name
+    for _, p := range h.Clients {
+        if p.Room.Id == roomID && p != player {
+            speak.SendEvent(p.Conn, "ROOM", leaveMsg)
+        }
+    }
+}
+
+func (h *Hub) innerNotifyRoomEnter(player *Player, roomID string) {
+    enterMsg := "PRESENCE ENTER " + player.Name
+    for _, p := range h.Clients {
+        if p.Room.Id == roomID && p != player {
+            speak.SendEvent(p.Conn, "ROOM", enterMsg)
+        }
+    }
 }
