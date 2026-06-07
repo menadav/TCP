@@ -47,6 +47,7 @@ npcs:
       - "It's ours! It's our own! They stole it from us!"
       - "Thieves! Murderers! We hates them!"
     hp: 60
+    attack_dmg: 12
     is_hostile: true
     quest_id: ""
 
@@ -110,7 +111,8 @@ rooms:
       NORTH: "cirith_ungol"
     items:
       - "item_mithril"
-    npcs: []
+    npcs:
+      - "npc_gollum"
 
   - id: "cirith_ungol"
     name: "Cirith Ungol Pass"

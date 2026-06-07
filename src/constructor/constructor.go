@@ -27,15 +27,16 @@ func NewHub(data *models.World) *models.Hub{
 
 func NewPlayer(conn_st string, conn net.Conn, name string, startRoom *models.Room) *models.Player{
 	return &models.Player{
-		Id: 	conn_st,
-		Conn:	conn,
-		Name: 	name,
-		Room:	startRoom,
-		Group:	"",
-		Inventory: []*models.Item{},
-		Max_HP:		100,
-		HP:			100,
-		Status:		"healthy",
-		Quests:		make(map[string]*models.PlayerQuest),
+		Id: 			conn_st,
+		Conn:			conn,
+		Name: 			name,
+		Room:			startRoom,
+		Group:			"",
+		Inventory:		[]*models.Item{},
+		Max_HP:			100,
+		HP:				100,
+		Status:			"healthy",
+		Quests:			make(map[string]*models.PlayerQuest),
+		NpcDialogueIdx	make(map[string]int),
 	}
 }

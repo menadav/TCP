@@ -17,7 +17,10 @@ type Npc struct {
 	Name		string				`json:"name" yaml:"name"`
 	Description string				`json:"description" yaml:"description"`
 	Dialogue	[]string			`json:"dialogue" yaml:"dialogue"`
-	HP			int					`json:"hp" yaml:"hp"`
+	MaxHP	    int					`json:"hp" yaml:"hp"`
+    CurrentHP   int                 `json:"-" yaml:"-"`
+    DialogueIdx int                 `json:"-" yaml:"-"`
+    AttackDmg   int                 `json:"-" yaml:"-"`
 	IsHostile	bool				`json:"is_hostile" yaml:"is_hostile"`
 	QuestID		string				`json:"quest_id" yaml:"quest_id"`
 }

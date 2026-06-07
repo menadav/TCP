@@ -33,7 +33,7 @@ func parseChat(partsChat []string, player *models.Player, h *models.Hub) {
 		}
 	case "GROUP":
 		if player.Group == "" {
-			speak.SendError(player.Conn, 403, "You are not in a group")
+			speak.SendError(player.Conn, 401, "NOT_IN_GROUP")
 			return
 		}
 		msg = models.Message{
@@ -43,7 +43,7 @@ func parseChat(partsChat []string, player *models.Player, h *models.Hub) {
 			Content:  fmt.Sprintf("CHAT %s %s", player.Name, text),
 		}
 	default:
-		speak.SendError(player.Conn, 400, "Unknown chat scope. Use GLOBAL, ROOM, or GROUP")
+		speak.SendError(player.Conn, 400, "SCOPE_INCORRECT_GLOBAL_ROOM_GROUP")
 		return
 	}
 	h.Broadcast <- msg

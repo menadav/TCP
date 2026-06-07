@@ -38,17 +38,18 @@ func (pq *PlayerQuest) GetProgress() string {
 }
 
 type Player struct {
-    mu          sync.RWMutex
-    Id          string
-    Conn        net.Conn
-    Name        string
-    Room        *Room
-    Group       string
-    Inventory   []*Item
-    Max_HP      int
-    HP          int
-    Status      string
-    Quests      map[string]*PlayerQuest
+    mu              sync.RWMutex
+    Id              string
+    Conn            net.Conn
+    Name            string
+    Room            *Room
+    Group           string
+    Inventory       []*Item
+    Max_HP          int
+    HP              int
+    Status          string
+    Quests          map[string]*PlayerQuest
+    NpcDialogueIdx  map[string]int
 }
 
 func (p *Player) GetName() string {

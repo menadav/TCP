@@ -31,6 +31,9 @@ func LoadWorld(path string)(*models.World, error){
     for _, npc := range yamlData.Npcs {
         world.Npcs[npc.ID] = npc
     }
+    for _, npc := range world.Npcs {
+        npc.CurrentHP = npc.MaxHP
+    }
     for _, quest := range yamlData.Quest {
         world.Quest[quest.ID] = quest
     }

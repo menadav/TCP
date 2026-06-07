@@ -73,11 +73,36 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 			return
 		}
 		parseChat(partsChat, player, h)
-	case "TAKE", "DROP", "TALK", "ATTACK", "QUEST":
+	case "TAKE":
 		if argument == "" {
-			speak.SendError(player.Conn, 400, "This command requires an argument")
+			speak.SendError(player.Conn, 400, "TAKE requires an item name")
 			return
 		}
+		game.TakeItem(player, argument)
+	case "DROP":
+		if argument == "" {
+			speak.SendError(player.Conn, 400, "DROP requires an item name")
+			return
+		}
+		game.DropItem(player, argument)
+	case "TALK":
+		if argument == "" {
+			speak.SendError(player.Conn, 400, "TALK requires an NPC name")
+			return
+		}
+		game.TalkNpc(player, argument)
+	case "ATTACK":
+		if argument == "" {
+			speak.SendError(player.Conn, 400, "ATTACK requires an NPC name")
+			return
+		}
+		game.AttackNpc(player, argument, h)
+	case "QUEST":
+		if argument == "" {
+			speak.SendError(player.Conn, 400, "QUEST requires a quest ID")
+			return
+		}
+		game.HandleQuest(player, argument, h.World)
 	case "GROUP":
 		if argument == "" {
 			return
