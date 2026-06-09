@@ -37,6 +37,5 @@ func NewPlayer(conn_st string, conn net.Conn, name string, startRoom *models.Roo
 		HP:				100,
 		Status:			"healthy",
 		Quests:			make(map[string]*models.PlayerQuest),
-		NpcDialogueIdx	make(map[string]int),
 	}
 }

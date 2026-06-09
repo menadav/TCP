@@ -85,24 +85,6 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 			return
 		}
 		game.DropItem(player, argument)
-	case "TALK":
-		if argument == "" {
-			speak.SendError(player.Conn, 400, "TALK requires an NPC name")
-			return
-		}
-		game.TalkNpc(player, argument)
-	case "ATTACK":
-		if argument == "" {
-			speak.SendError(player.Conn, 400, "ATTACK requires an NPC name")
-			return
-		}
-		game.AttackNpc(player, argument, h)
-	case "QUEST":
-		if argument == "" {
-			speak.SendError(player.Conn, 400, "QUEST requires a quest ID")
-			return
-		}
-		game.HandleQuest(player, argument, h.World)
 	case "GROUP":
 		if argument == "" {
 			return
