@@ -3,6 +3,7 @@ package models
 import (
     "net"
     "sync"
+    "answer_protocol/src/speakserver"
 )
 
 type Scope string
@@ -50,6 +51,7 @@ type Player struct {
     Status          string
     Quests          map[string]*PlayerQuest
     NpcDialogueIdx  map[string]int
+    MsgChan         chan Message         
 }
 
 func (p *Player) GetName() string {
@@ -81,6 +83,12 @@ func (p *Player) GetStatus() string {
     p.mu.RLock()
     defer p.mu.RUnlock()
     return p.Status
+}
+
+func (p *Player) ListenMsg() {
+    for msg := range p.MsgChan {
+        speak.SendEvent(p.Conn, msg.Category, msg.Content) 
+    }
 }
 
 func (p *Player) GetQuestsResponse() []PlayerQuestResponse {

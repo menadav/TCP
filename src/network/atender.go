@@ -35,9 +35,11 @@ func ClientAtender(conn net.Conn, hub *models.Hub) {
             }
             hub.Unregister <- player
         }
+        close(player.MsgChan)
         conn.Close()
     }()
     hub.Register <- player
+    go player.ListenMsg()
     processFunction := func(line string) {
 		parse.ParseCommandCli(line, player, hub)
 	}

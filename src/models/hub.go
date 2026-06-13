@@ -1,7 +1,6 @@
 package models
 
 import (
-	"answer_protocol/src/speakserver"
 	"net"
     "sync"
 )
@@ -42,12 +41,12 @@ func (h *Hub) Run(){
                 switch msg.Scope {
                 case ScopeGlobal:
                     for _, player := range h.Clients {
-                        speak.SendEvent(player.Conn, msg.Category, msg.Content)
+                        player.MsgChan <- msg
                     }
                 case ScopeRoom:
                     for _, player := range h.Clients {
                         if player.Room.Id == msg.Filter {
-                            speak.SendEvent(player.Conn, msg.Category, msg.Content)
+                            player.MsgChan <- msg
                         }
                     }
                 case ScopeGroup:
@@ -88,7 +87,11 @@ func (h *Hub) innerNotifyRoomLeave(player *Player, roomID string) {
     leaveMsg := "PRESENCE LEAVE " + player.Name
     for _, p := range h.Clients {
         if p.Room.Id == roomID && p != player {
-            speak.SendEvent(p.Conn, "ROOM", leaveMsg)
+            p.MsgChan <- Message{
+                Scope:    ScopeRoom,
+                Category: "ROOM",
+                Content:  leaveMsg,
+            }
         }
     }
 }
@@ -97,7 +100,11 @@ func (h *Hub) innerNotifyRoomEnter(player *Player, roomID string) {
     enterMsg := "PRESENCE ENTER " + player.Name
     for _, p := range h.Clients {
         if p.Room.Id == roomID && p != player {
-            speak.SendEvent(p.Conn, "ROOM", enterMsg)
+            p.MsgChan <- Message{
+                Scope:    ScopeRoom,
+                Category: "ROOM",
+                Content:  enterMsg,
+            }
         }
     }
 }
