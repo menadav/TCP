@@ -70,6 +70,9 @@ Fase 11: Actualizar funciones para interacturar con el mundo
         Inventory, Look, Status, Who   Importante Checkear misiones Quests
 
 Fase 12: Crear comandos de desplazamiento.
+
+Fase 13: Crear comandos Take/Drop
+
 ===================================================================================================================================================
 
 package main -> Obligatorio para poder compilar.

@@ -1,4 +1,9 @@
 items:
+  - id: "item_ring"
+    name: "The One Ring"
+    description: "A plain golden ring, deceptively light, radiating a faint malice."
+    obtainable: false
+
   - id: "item_ale"
     name: "Prancing Pony Ale"
     description: "A pint of frothy, dark ale that restores a traveler's spirit."
@@ -50,6 +55,7 @@ npcs:
     attack_dmg: 12
     is_hostile: true
     quest_id: ""
+    combat: false
 
 rooms:
   - id: "start"
@@ -116,13 +122,30 @@ rooms:
 
   - id: "cirith_ungol"
     name: "Cirith Ungol Pass"
-quests:
-  - id: "quest_destroy_ring"
+    description: "A narrow, treacherous pass guarded by ancient evil."
+    exist: {}
+    items: []
+    npcs: []
+
+quest:
+  - id: "destroy_ring"
     description: "Ayuda a Frodo a llevar el Anillo Único hasta el Monte del Destino."
+    type: "deliver"
+    start_item: "item_ring"
+    required_item: "item_ring"
     reward: "item_mithril"
     status: "available"
 
   - id: "quest_heal_wounded"
     description: "Busca hojas de Athelas urgentemente para curar a un compañero herido."
+    type: "deliver"
+    required_item: "item_athelas"
     reward: "item_phial"
+    status: "available"
+
+  - id: "quest_kill_gollum"
+    description: "Gollum acecha en las Minas de Moria. Elimínalo para asegurar el paso."
+    type: "kill"
+    target_npc: "npc_gollum"
+    reward: "item_athelas"
     status: "available"

@@ -39,5 +39,6 @@ func NewPlayer(conn_st string, conn net.Conn, name string, startRoom *models.Roo
 		Quests:			make(map[string]*models.PlayerQuest),
 		NpcDialogueIdx:	make(map[string]int),
 		MsgChan:		make(chan models.Message, 32),
+		CombatNpc:      "",
 	}
 }

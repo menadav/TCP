@@ -18,6 +18,34 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 	if len(parts) > 1 {
 		argument = parts[1]
 	}
+	if player.GetStatus() == "combat" {
+		switch command {
+		case "ATTACK", "DEFEND", "FLEE", "STATUS":
+			if argument != "" {
+				speak.SendError(player.Conn, 400, "ONLY_ARGUMENT")
+				return
+			}
+			if command == "ATTACK" {
+				game.Attack(player, h)
+				return
+			}
+			if command == "DEFEND" {
+				game.Defend(player, h)
+				return
+			}
+			if command == "FLEE" {
+				game.Flee(player, h)
+				return
+			}
+			if command == "STATUS" {
+				game.ShowStatus(player)
+				return
+			}
+		default:
+			speak.SendError(player.Conn, 403, "IN_COMBAT_ONLY_ATTACK_DEFEND_FLEE")
+			return
+		}
+	}
 	switch command {
 	case "LOOK", "INVENTORY", "STATUS", "QUESTS", "WHO", "QUIT":
 		if argument != "" {
@@ -91,6 +119,23 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 			return
 		}
 		game.TalkNpc(player, argument)
+	case "QUEST":
+		if argument == "" {
+			speak.SendError(player.Conn, 400, "QUEST requires an action and quest_id")
+			return
+		}
+		partsQuest := strings.SplitN(argument, " ", 2)
+		if len(partsQuest) < 2 {
+			speak.SendError(player.Conn, 400, "Usage: QUEST <ACCEPT|COMPLETE> <quest_id>")
+			return
+		}
+		game.ManageQuest(player, h, partsQuest[0], partsQuest[1])
+	case "ATTACK":
+		if argument == "" {
+			speak.SendError(player.Conn, 400, "Atack need a target")
+			return
+		}
+		game.StartAttack(player, argument, h)
 	case "GROUP":
 		if argument == "" {
 			return
