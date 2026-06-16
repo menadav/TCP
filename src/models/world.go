@@ -11,6 +11,8 @@ type Quest struct {
     Type         string `json:"type" yaml:"type"`
     StartItem    string `json:"start_item" yaml:"start_item"`
     RequiredItem string `json:"required_item" yaml:"required_item"`
+    RequiredKill string `json:"required_kill" yaml:"required_kill"`
+    RequiredRoom string `json:"required_room" yaml:"required_room"`
     TargetNpc    string `json:"target_npc" yaml:"target_npc"`
     Reward       string `json:"reward" yaml:"reward"`
     Status       string `json:"status"`
@@ -35,7 +37,9 @@ type Item struct {
     Name        string				`json:"name" yaml:"name"`
     Description string 				`json:"description" yaml:"description"`
     Obtainable  bool				`json:"obtainable" yaml:"obtainable"`
-} 
+    Hand        bool                `json:"hand" yaml:"hand"`
+    Dmg         int                 `json:"dmg" yaml:"dmg"`
+}
 
 
 type Room struct {
@@ -68,7 +72,7 @@ type World struct {
 func (w *World) UpdatePlayerRoom(player *Player, targetRoomID string) error {
     nextRoom, roomExists := w.Rooms[targetRoomID]
     if !roomExists {
-        return fmt.Errorf("error grave: la sala de destino '%s' no existe en el mundo", targetRoomID)
+        return fmt.Errorf("[ERROR] The target room '%s' dont exist in the world", targetRoomID)
     }
     actualRoom := player.Room
     if actualRoom != nil {
@@ -90,12 +94,12 @@ func (w *World) UpdatePlayerRoom(player *Player, targetRoomID string) error {
 func (w *World) MovePlayer(player *Player, direction string) error {
     actualRoom := player.Room
     if actualRoom == nil {
-        return fmt.Errorf("el jugador no está en ninguna sala")
+        return fmt.Errorf("Player is not in a room")
     }
 
     nextRoomID, exists := actualRoom.Exist[direction]
     if !exists {
-        return fmt.Errorf("no hay salida hacia el %s", direction)
+        return fmt.Errorf("There aren't directions %s", direction)
     }
 
     return w.UpdatePlayerRoom(player, nextRoomID)

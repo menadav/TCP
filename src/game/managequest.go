@@ -20,7 +20,7 @@ func ManageQuest(player *models.Player, h *models.Hub, action string, questID st
         if quest.StartItem != ""{
             startItem = h.World.Items[quest.StartItem]
         }
-        if err := player.AcceptQuest(quest.ID, startItem); err != nil{
+        if err := player.AcceptQuest(quest, startItem); err != nil{
             speak.SendError(player.Conn, 403, err.Error())
             return
         }

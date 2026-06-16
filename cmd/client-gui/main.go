@@ -1,21 +1,14 @@
 package main
 
 import (
-	"fnt"
-	"net"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/widget"
 )
 
-func main(){
-	var listen net.Conn
-	var err error
-	var n int
+func main() {
+	a := app.New()
+	w := a.NewWindow("Hello World")
 
-	conn, err = net.Listen("tcp", ":8080")
-	if err != nil {
-		fmt.Println("Error to connect", err)
-		return
-	}
-	defer conn.Close()
-
-	go readServer(conn)
+	w.SetContent(widget.NewLabel("Hello World!"))
+	w.ShowAndRun()
 }

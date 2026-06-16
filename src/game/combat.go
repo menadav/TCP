@@ -26,9 +26,10 @@ func Attack(player *models.Player, h *models.Hub) {
         speak.SendError(player.Conn, 404, "TARGET_GONE")
         return
     }
-    playerDmg := 10 + rand.Intn(11)
+    playerDmg := player.Dmg + rand.Intn(5)
     npc.CurrentHP -= playerDmg
     if npc.CurrentHP <= 0 {
+        player.HandleNpcDeath(npc.ID, h.World.Quest)
         player.SetStatus("healthy")
         player.SetCombatNpc("")
         npc.Combat = false

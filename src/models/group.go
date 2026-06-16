@@ -6,6 +6,21 @@ import (
     "answer_protocol/src/speakserver"
 )
 
+type Scope string
+
+const (
+    ScopeGlobal Scope = "GLOBAL"
+    ScopeRoom   Scope = "ROOM"
+    ScopeGroup  Scope = "GROUP"
+)
+
+type Message struct {
+    Scope    Scope
+    Filter   string
+    Category string
+    Content  string
+}
+
 type Group struct {
 	Id         string
 	Leader     *Player

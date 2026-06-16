@@ -3,26 +3,57 @@ items:
     name: "The One Ring"
     description: "A plain golden ring, deceptively light, radiating a faint malice."
     obtainable: false
+    hand: false
+    dmg: 0
 
   - id: "item_ale"
     name: "Prancing Pony Ale"
     description: "A pint of frothy, dark ale that restores a traveler's spirit."
     obtainable: true
+    hand: false
+    dmg: 0
 
   - id: "item_athelas"
     name: "Athelas Leaves"
     description: "Also known as Kingsfoil. A legendary healing herb capable of curing severe wounds."
     obtainable: true
+    hand: false
+    dmg: 0
 
   - id: "item_phial"
     name: "Phial of Galadriel"
     description: "A crystal vial capturing the pure light of Eärendil's star to illuminate dark places."
     obtainable: true
+    hand: false
+    dmg: 0
 
   - id: "item_mithril"
     name: "Mithril Shirt"
     description: "A coat of mail light as a feather but harder than dragon scales. It is locked behind glass."
     obtainable: false
+    hand: false
+    dmg: 0
+
+  - id: "item_sword_wood"
+    name: "Sword Wood"
+    description: "The sword of the Egalindo"
+    obtainable: true
+    hand: true
+    dmg: 10
+
+  - id: "item_sword_silver"
+    name: "Sword silver"
+    description: "The sword of the Chiki"
+    obtainable: true
+    hand: true
+    dmg: 15
+
+  - id: "item_sword_gold"
+    name: "Sword silver"
+    description: "The sword of the dmenali"
+    obtainable: true
+    hand: true
+    dmg: 30
 
 npcs:
   - id: "npc_frodo"
@@ -65,7 +96,8 @@ rooms:
       NORTH: "rivendell"
       WEST: "bree"
       EAST: "lothlorien"
-    items: []
+    items:
+      - "item_sword_wood"
     npcs:
       - "npc_frodo"
 
@@ -77,6 +109,7 @@ rooms:
       EAST: "start"
     items:
       - "item_ale"
+      - "item_sword_silver"
     npcs: []
 
   - id: "weathertop"
@@ -117,18 +150,20 @@ rooms:
       NORTH: "cirith_ungol"
     items:
       - "item_mithril"
+      - "item_sword_gold"
     npcs:
       - "npc_gollum"
 
   - id: "cirith_ungol"
     name: "Cirith Ungol Pass"
-    description: "A narrow, treacherous pass guarded by ancient evil."
-    exist: {}
+    description: "A narrow, treacherous pass guarded by ancient evil. A dark path leads back South into the depths of Moria."
+    exist:
+      SOUTH: "moria"
     items: []
     npcs: []
 
 quest:
-  - id: "destroy_ring"
+  - id: "quest_destroy_ring"
     description: "Ayuda a Frodo a llevar el Anillo Único hasta el Monte del Destino."
     type: "deliver"
     start_item: "item_ring"
@@ -146,6 +181,20 @@ quest:
   - id: "quest_kill_gollum"
     description: "Gollum acecha en las Minas de Moria. Elimínalo para asegurar el paso."
     type: "kill"
-    target_npc: "npc_gollum"
+    required_kill: "npc_gollum"
+    reward: "item_athelas"
+    status: "available"
+
+  - id: "quest_scout_moria"
+    description: "Adéntrate en los peligros de Khazad-dum y explora las Minas de Moria."
+    type: "explore"
+    required_room: "moria"
+    reward: "item_phial"
+    status: "available"
+
+  - id: "quest_gather_supplies"
+    description: "Consigue una jarra de cerveza en El Poni Pisador para abastecer a los montaraces."
+    type: "collect"
+    required_item: "item_ale"
     reward: "item_athelas"
     status: "available"

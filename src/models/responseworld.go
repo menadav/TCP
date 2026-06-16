@@ -11,9 +11,10 @@ type PlayerQuestResponse struct {
 }
 
 type StatusResponse struct {
-    HP     int    `json:"hp"`
-    MaxHP  int    `json:"max_hp"`
-    Status string `json:"status"`
+    HP		int		`json:"hp"`
+    MaxHP	int		`json:"max_hp"`
+    Status	string	`json:"status"`
+	Dmg		int		`json:"dmg"`
 }
 
 

@@ -36,6 +36,7 @@ func ShowStatus(player *models.Player){
 		HP:		player.GetHp(),
 		MaxHP:	player.GetMaxHp(),
 		Status:	player.GetStatus(),
+		Dmg:	player.GetDmg(),
 	}
 	bytesJSON, err := json.Marshal(status)
 	if err != nil {

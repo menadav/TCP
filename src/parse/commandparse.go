@@ -20,12 +20,12 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 	}
 	if player.GetStatus() == "combat" {
 		switch command {
-		case "ATTACK", "DEFEND", "FLEE", "STATUS":
+		case "USE_ITEM", "DEFEND", "FLEE", "STATUS":
 			if argument != "" {
 				speak.SendError(player.Conn, 400, "ONLY_ARGUMENT")
 				return
 			}
-			if command == "ATTACK" {
+			if command == "USE_ITEM" {
 				game.Attack(player, h)
 				return
 			}
@@ -106,7 +106,7 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 			speak.SendError(player.Conn, 400, "TAKE requires an item name")
 			return
 		}
-		game.TakeItem(player, argument)
+		game.TakeItem(player, argument, h)
 	case "DROP":
 		if argument == "" {
 			speak.SendError(player.Conn, 400, "DROP requires an item name")

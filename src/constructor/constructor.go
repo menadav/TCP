@@ -40,5 +40,7 @@ func NewPlayer(conn_st string, conn net.Conn, name string, startRoom *models.Roo
 		NpcDialogueIdx:	make(map[string]int),
 		MsgChan:		make(chan models.Message, 32),
 		CombatNpc:      "",
+		Hand:			true,
+		Dmg:			5,
 	}
 }

@@ -7,24 +7,13 @@ import (
 	"sync"
 )
 
-type Scope string
-
-const (
-    ScopeGlobal Scope = "GLOBAL"
-    ScopeRoom   Scope = "ROOM"
-    ScopeGroup  Scope = "GROUP"
-)
-
-type Message struct {
-    Scope    Scope
-    Filter   string
-    Category string
-    Content  string
-}
 type PlayerQuest struct {
-    QuestID  string
-    Status   string
-    Progress string
+    QuestID         string
+    Status          string
+    Progress        string
+    NpcKilled       bool
+    RoomVisited     bool
+    ItemCollected   bool
 }
 
 func (pq *PlayerQuest) GetQuestID() string {
@@ -37,6 +26,25 @@ func (pq *PlayerQuest) GetStatus() string {
 
 func (pq *PlayerQuest) GetProgress() string {
     return pq.Progress
+}
+
+func (pq *PlayerQuest) UpdateProgressString(q *Quest) {
+    if pq.Status == "completed" {
+        pq.Progress = "done"
+        return
+    }
+    npcOk := q.RequiredKill == "" || pq.NpcKilled
+    roomOk := q.RequiredRoom == "" || pq.RoomVisited
+    itemOk := q.RequiredItem == "" || pq.ItemCollected
+    if npcOk && roomOk && itemOk {
+        pq.Progress = "Completed"
+    } else {
+        pq.Progress = "0/1"
+        if pq.NpcKilled && q.RequiredKill != "" { pq.Progress += "Enemies Defeated; " }
+        if pq.RoomVisited && q.RequiredRoom != "" { pq.Progress += "Location Explored; " }
+        if pq.ItemCollected && q.RequiredItem != "" { pq.Progress += "Items Found; " }
+        pq.Progress += ")"
+    }
 }
 
 type Player struct {
@@ -54,6 +62,26 @@ type Player struct {
     NpcDialogueIdx  map[string]int
     MsgChan         chan Message
     CombatNpc       string
+    Hand            bool
+    Dmg             int
+}
+
+func (p *Player) UpdateDmg(item *Item){
+    p.mu.Lock()
+    defer p.mu.Unlock()
+
+    p.Hand = false
+    p.Dmg = item.Dmg
+}
+
+func (p *Player) VoidDmg(){
+    p.mu.Lock()
+    defer p.mu.Unlock()
+
+    if !p.Hand{
+        p.Hand = true
+        p.Dmg = 5
+    }
 }
 
 func (p *Player) GetName() string {
@@ -83,6 +111,13 @@ func (p *Player) GetHp() int {
     defer p.mu.RUnlock()
 
     return p.HP
+}
+
+func (p *Player) GetDmg() int {
+    p.mu.RLock()
+    defer p.mu.RUnlock()
+
+    return p.Dmg
 }
 
 func (p *Player) GetStatus() string {
@@ -157,28 +192,102 @@ func (p *Player) GetQuestsResponse() []PlayerQuestResponse {
     }
     return responseList
 }
+func (p *Player) HandleNpcDeath(npcID string, worldQuests map[string]*Quest) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
-func (p *Player) AcceptQuest(questID string, startItem *Item) error {
-    p.mu.Lock()
-    defer p.mu.Unlock()
+	for _, pq := range p.Quests {
+		if pq.Status == "in_progress" {
+			if q, ok := worldQuests[pq.QuestID]; ok {
+				if q.RequiredKill == "" || q.RequiredKill != npcID {
+					continue
+				}
+				pq.NpcKilled = true
+				pq.UpdateProgressString(q)
+				p.SendAsync("QUEST", fmt.Sprintf("Quest %s updated: %s", pq.QuestID, pq.Progress))
+			}
+		}
+	}
+}
 
-    if existing, ok := p.Quests[questID]; ok {
-        if existing.Status == "in_progress" {
-            return fmt.Errorf("QUEST_ALREADY_IN_PROGRESS")
-        }
-        if existing.Status == "completed" {
-            return fmt.Errorf("QUEST_ALREADY_COMPLETED")
-        }
+func (p *Player) HandleRoomVisit(roomID string, worldQuests map[string]*Quest) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for _, pq := range p.Quests {
+		if pq.Status == "in_progress" {
+			if q, ok := worldQuests[pq.QuestID]; ok {
+				if q.RequiredRoom == "" || q.RequiredRoom != roomID {
+					continue
+				}
+				pq.RoomVisited = true
+				pq.UpdateProgressString(q)
+				p.SendAsync("QUEST", fmt.Sprintf("Quest %s updated: %s", pq.QuestID, pq.Progress))
+			}
+		}
+	}
+}
+
+func (p *Player) HandleItemCollection(itemID string, worldQuests map[string]*Quest) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for _, pq := range p.Quests {
+		if pq.Status == "in_progress" {
+			if q, ok := worldQuests[pq.QuestID]; ok {
+				if q.RequiredItem == "" || q.RequiredItem != itemID {
+					continue
+                }
+				pq.ItemCollected = true
+				pq.UpdateProgressString(q)
+				p.SendAsync("QUEST", fmt.Sprintf("Quest %s updated: %s", pq.QuestID, pq.Progress))
+		    }
+	    }
     }
-    p.Quests[questID] = &PlayerQuest{
-        QuestID:  questID,
-        Status:   "in_progress",
-        Progress: "started",
-    }
-    if startItem != nil {
-        p.Inventory = append(p.Inventory, startItem)
-    }
-    return nil
+}
+
+func (p *Player) AcceptQuest(quest *Quest, startItem *Item) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.Quests == nil {
+		p.Quests = make(map[string]*PlayerQuest)
+	}
+	if existing, ok := p.Quests[quest.ID]; ok {
+		if existing.Status == "in_progress" {
+			return fmt.Errorf("QUEST_ALREADY_IN_PROGRESS")
+		}
+		if existing.Status == "completed" {
+			return fmt.Errorf("QUEST_ALREADY_COMPLETED")
+		}
+	}
+	pq := &PlayerQuest{
+		QuestID:        quest.ID,
+		Status:         "in_progress",
+		Progress:       "started",
+		NpcKilled:      false,
+		RoomVisited:    false,
+		ItemCollected:  false,
+	}
+	if quest.RequiredRoom != "" && p.Room != nil && p.Room.Id == quest.RequiredRoom {
+		pq.RoomVisited = true
+	}
+	if quest.RequiredItem != "" {
+		for _, item := range p.Inventory {
+			if item.ID == quest.RequiredItem {
+				pq.ItemCollected = true
+				break
+			}
+		}
+	}
+	pq.UpdateProgressString(quest)
+	p.Quests[quest.ID] = pq
+	if startItem != nil {
+		if p.Inventory == nil {
+			p.Inventory = make([]*Item, 0)
+		}
+		p.Inventory = append(p.Inventory, startItem)
+	}
+	return nil
 }
 
 func (p *Player) CompleteQuest(quest *Quest, rewardItem *Item) error {
@@ -189,6 +298,12 @@ func (p *Player) CompleteQuest(quest *Quest, rewardItem *Item) error {
     if !ok || pq.Status != "in_progress" {
         return fmt.Errorf("QUEST_NOT_IN_PROGRESS")
     }
+    if quest.RequiredKill != "" && !pq.NpcKilled {
+		return fmt.Errorf("OBJECTIVE_NPC_NOT_KILLED")
+	}
+    if quest.RequiredRoom != "" && !pq.RoomVisited {
+		return fmt.Errorf("OBJECTIVE_ROOM_NOT_VISITED")
+	}
     if quest.RequiredItem != "" {
         idx := -1
         for i, item := range p.Inventory {
