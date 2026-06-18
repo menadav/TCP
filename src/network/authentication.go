@@ -25,6 +25,9 @@ func Authentication(scanner *bufio.Scanner, conn net.Conn, h *models.Hub) string
         }
         name := scanner.Text()
         name_list := strings.Fields(name)
+        if name == "REQ" {
+            continue
+        }
         if len(name_list) != 2 {
             speak.SendError(conn, 400, "MALFORMED_COMMAND_CONNECT <name>")
             continue

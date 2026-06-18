@@ -104,3 +104,5 @@ func (w *World) MovePlayer(player *Player, direction string) error {
 
     return w.UpdatePlayerRoom(player, nextRoomID)
 }
+
+

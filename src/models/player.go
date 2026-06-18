@@ -48,7 +48,7 @@ func (pq *PlayerQuest) UpdateProgressString(q *Quest) {
 }
 
 type Player struct {
-    mu              sync.RWMutex
+    Mu              sync.RWMutex
     Id              string
     Conn            net.Conn
     Name            string
@@ -67,16 +67,16 @@ type Player struct {
 }
 
 func (p *Player) UpdateDmg(item *Item){
-    p.mu.Lock()
-    defer p.mu.Unlock()
+    p.Mu.Lock()
+    defer p.Mu.Unlock()
 
     p.Hand = false
     p.Dmg = item.Dmg
 }
 
 func (p *Player) VoidDmg(){
-    p.mu.Lock()
-    defer p.mu.Unlock()
+    p.Mu.Lock()
+    defer p.Mu.Unlock()
 
     if !p.Hand{
         p.Hand = true
@@ -85,70 +85,70 @@ func (p *Player) VoidDmg(){
 }
 
 func (p *Player) GetName() string {
-    p.mu.RLock()
-    defer p.mu.RUnlock()
+    p.Mu.RLock()
+    defer p.Mu.RUnlock()
 
     return p.Name
 }
 
 func (p *Player) GetInventory() []*Item {
-    p.mu.RLock()
-    defer p.mu.RUnlock()
+    p.Mu.RLock()
+    defer p.Mu.RUnlock()
 
     inventory := p.Inventory
     return inventory
 }
 
 func (p *Player) GetMaxHp() int {
-    p.mu.RLock()
-    defer p.mu.RUnlock()
+    p.Mu.RLock()
+    defer p.Mu.RUnlock()
 
     return p.Max_HP
 }
 
 func (p *Player) GetHp() int {
-    p.mu.RLock()
-    defer p.mu.RUnlock()
+    p.Mu.RLock()
+    defer p.Mu.RUnlock()
 
     return p.HP
 }
 
 func (p *Player) GetDmg() int {
-    p.mu.RLock()
-    defer p.mu.RUnlock()
+    p.Mu.RLock()
+    defer p.Mu.RUnlock()
 
     return p.Dmg
 }
 
 func (p *Player) GetStatus() string {
-    p.mu.RLock()
-    defer p.mu.RUnlock()
+    p.Mu.RLock()
+    defer p.Mu.RUnlock()
 
     return p.Status
 }
 
 func (p *Player) GetCombatNpc() string {
-    p.mu.RLock()
-    defer p.mu.RUnlock()
+    p.Mu.RLock()
+    defer p.Mu.RUnlock()
 
     return p.CombatNpc
 }
 
 func (p *Player) SetStatus(status string) {
-    p.mu.Lock()
-    defer p.mu.Unlock()
+    p.Mu.Lock()
+    defer p.Mu.Unlock()
     p.Status = status
 }
 
 func (p *Player) SetCombatNpc(npcID string) {
-    p.mu.Lock()
-    defer p.mu.Unlock()
+    p.Mu.Lock()
+    defer p.Mu.Unlock()
     p.CombatNpc = npcID
 }
 
 func (p *Player) SetHp(hp int){
-    p.mu.Lock()
-    defer p.mu.Unlock()
+    p.Mu.Lock()
+    defer p.Mu.Unlock()
 
     p.HP = hp
 }
@@ -169,15 +169,15 @@ func (p *Player) ListenMsg() {
 }
 
 func (p *Player) ApplyDamage(dmg int){
-    p.mu.Lock()
-    defer p.mu.Unlock()
+    p.Mu.Lock()
+    defer p.Mu.Unlock()
 
     p.HP -= dmg
 }
 
 func (p *Player) GetQuestsResponse() []PlayerQuestResponse {
-    p.mu.RLock()
-    defer p.mu.RUnlock()
+    p.Mu.RLock()
+    defer p.Mu.RUnlock()
 
     responseList := make([]PlayerQuestResponse, 0)
     for _, pQuest := range p.Quests {
@@ -192,9 +192,132 @@ func (p *Player) GetQuestsResponse() []PlayerQuestResponse {
     }
     return responseList
 }
+
+func (p *Player) GetCurrentRoomNpcIDs() []string {
+	p.Mu.RLock()
+	defer p.Mu.RUnlock()
+	
+	if p.Room == nil {
+		return nil
+	}
+
+	p.Room.Mu.RLock()
+	defer p.Room.Mu.RUnlock()
+
+	var ids []string
+	for _, npc := range p.Room.Npcs {
+		if npc != nil {
+			ids = append(ids, npc.ID)
+		}
+	}
+	return ids
+}
+
+func (p *Player) GetCurrentRoomItemIDs() []string {
+	p.Mu.RLock()
+	defer p.Mu.RUnlock()
+	
+	if p.Room == nil {
+		return nil
+	}
+
+	p.Room.Mu.RLock()
+	defer p.Room.Mu.RUnlock()
+
+	var ids []string
+	for _, item := range p.Room.Items {
+		if item != nil {
+			ids = append(ids, item.ID)
+		}
+	}
+	return ids
+}
+
+func (p *Player) GetCurrentRoomNpcIDsTalk() []string {
+    p.Room.Mu.RLock()
+    defer p.Room.Mu.RUnlock()
+
+    var ids []string
+    for _, npc := range p.Room.Npcs {
+        if npc != nil && !npc.IsHostile {
+            ids = append(ids, npc.ID)
+        }
+    }
+    return ids
+}
+
+func (p *Player) GetCurrentRoomNpcIDsHostil() []string {
+    p.Room.Mu.RLock()
+    defer p.Room.Mu.RUnlock()
+
+    var ids []string
+    for _, npc := range p.Room.Npcs {
+        if npc != nil && npc.IsHostile && !npc.Combat {
+            ids = append(ids, npc.ID)
+        }
+    }
+    return ids
+}
+
+func (p *Player) GetInventoryItemIDs() []string {
+    p.Mu.RLock()
+    defer p.Mu.RUnlock()
+
+    ids := make([]string, 0, len(p.Inventory))
+    
+    for _, item := range p.Inventory {
+        if item != nil {
+            ids = append(ids, item.ID)
+        }
+    }
+    return ids
+}
+
+func (p *Player) GetPlayerQuestsList() []PlayerQuestResponse {
+	p.Mu.RLock()
+	defer p.Mu.RUnlock()
+
+	var list []PlayerQuestResponse
+	for _, pq := range p.Quests {
+		if pq != nil {
+			list = append(list, PlayerQuestResponse{
+				QuestID:  pq.QuestID,
+				Status:   pq.Status,
+				Progress: pq.Progress,
+			})
+		}
+	}
+	return list
+}
+
+func (p *Player) GetRoomNpcQuests() []QuestResponse {
+    p.Mu.RLock()
+    room := p.Room
+    p.Mu.RUnlock()
+
+    if room == nil {
+        return nil
+    }
+    
+    room.Mu.RLock()
+    defer room.Mu.RUnlock()
+
+    var list []QuestResponse
+    for _, npc := range room.Npcs {
+        if npc != nil && npc.QuestID != "" {
+            list = append(list, QuestResponse{
+                ID:    npc.QuestID, 
+                Title: "Misión: " + npc.QuestID,
+            })
+        }
+    }
+    
+    return list
+}
+
 func (p *Player) HandleNpcDeath(npcID string, worldQuests map[string]*Quest) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.Mu.Lock()
+	defer p.Mu.Unlock()
 
 	for _, pq := range p.Quests {
 		if pq.Status == "in_progress" {
@@ -211,8 +334,8 @@ func (p *Player) HandleNpcDeath(npcID string, worldQuests map[string]*Quest) {
 }
 
 func (p *Player) HandleRoomVisit(roomID string, worldQuests map[string]*Quest) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.Mu.Lock()
+	defer p.Mu.Unlock()
 
 	for _, pq := range p.Quests {
 		if pq.Status == "in_progress" {
@@ -229,8 +352,8 @@ func (p *Player) HandleRoomVisit(roomID string, worldQuests map[string]*Quest) {
 }
 
 func (p *Player) HandleItemCollection(itemID string, worldQuests map[string]*Quest) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.Mu.Lock()
+	defer p.Mu.Unlock()
 
 	for _, pq := range p.Quests {
 		if pq.Status == "in_progress" {
@@ -247,8 +370,8 @@ func (p *Player) HandleItemCollection(itemID string, worldQuests map[string]*Que
 }
 
 func (p *Player) AcceptQuest(quest *Quest, startItem *Item) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.Mu.Lock()
+	defer p.Mu.Unlock()
 	if p.Quests == nil {
 		p.Quests = make(map[string]*PlayerQuest)
 	}
@@ -291,8 +414,8 @@ func (p *Player) AcceptQuest(quest *Quest, startItem *Item) error {
 }
 
 func (p *Player) CompleteQuest(quest *Quest, rewardItem *Item) error {
-    p.mu.Lock()
-    defer p.mu.Unlock()
+    p.Mu.Lock()
+    defer p.Mu.Unlock()
 
     pq, ok := p.Quests[quest.ID]
     if !ok || pq.Status != "in_progress" {

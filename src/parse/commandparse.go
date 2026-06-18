@@ -4,7 +4,9 @@ import (
 	"answer_protocol/src/models"
 	"answer_protocol/src/speakserver"
 	"answer_protocol/src/game"
+	"encoding/json"
 	"strings"
+	"fmt"
 )
 
 func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
@@ -20,7 +22,7 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 	}
 	if player.GetStatus() == "combat" {
 		switch command {
-		case "USE_ITEM", "DEFEND", "FLEE", "STATUS":
+		case "USE_ITEM", "DEFEND", "FLEE", "STATUS", "REQ":
 			if argument != "" {
 				speak.SendError(player.Conn, 400, "ONLY_ARGUMENT")
 				return
@@ -39,6 +41,9 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 			}
 			if command == "STATUS" {
 				game.ShowStatus(player)
+				return
+			}
+			if command == "REQ"{
 				return
 			}
 		default:
@@ -142,6 +147,28 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 		}
 		partsGroup := strings.Split(argument, " ")
 		parseGroup(partsGroup, player, h)
+	case "REQ":
+        player.Conn.Write([]byte{0x03})
+        if player.Room != nil {
+            player.Room.Mu.RLock()
+            for i, npc := range player.Room.Npcs {
+                if npc == nil {
+                    fmt.Printf("   [%d] El puntero del NPC es NIL\n", i)
+                    continue
+                }
+            }
+            player.Room.Mu.RUnlock()
+        }
+        state := models.WorldStateResponse{
+            RoomItems:    player.GetCurrentRoomItemIDs(),
+            RoNpcsTalk:   player.GetCurrentRoomNpcIDsTalk(),
+			RoNpcsHostil: player.GetCurrentRoomNpcIDsHostil(),
+            Inventory:    player.GetInventoryItemIDs(),
+            PlayerQuests: player.GetPlayerQuestsList(),
+            NpcQuests:    player.GetRoomNpcQuests(), 
+        }
+        json.NewEncoder(player.Conn).Encode(state)
+        return
 	default:
 		speak.SendError(player.Conn, 400, "Unknown command")
 		return

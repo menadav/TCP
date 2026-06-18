@@ -4,6 +4,20 @@ import(
 	"encoding/json"
 )
 
+type QuestResponse struct {
+    ID    string
+    Title string
+}
+
+type WorldStateResponse struct {
+    RoomItems		[]string				`json:"room_items"`
+    RoNpcsTalk		[]string				`json:"room_npcs_talk"`
+    RoNpcsHostil	[]string				`json:"room_npcs_hostil"`
+    Inventory		[]string				`json:"inventory"`
+    PlayerQuests	[]PlayerQuestResponse	`json:"player_quests"`
+    NpcQuests		[]QuestResponse			`json:"npc_quests"`
+}
+
 type PlayerQuestResponse struct {
     QuestID  string `json:"quest_id"`
     Status   string `json:"status"`
