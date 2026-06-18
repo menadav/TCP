@@ -211,6 +211,7 @@ func (ui *GameUI) removeLocalItem(itemToRemove *models.Item) {
     }
     ui.CurrentPlayer.Inventory = newInv
 }
+
 func (ui *GameUI) showTargetSelection(action string) {
     ui.currentMenu = action
     var objs []fyne.CanvasObject
