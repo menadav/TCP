@@ -1,36 +1,35 @@
 package models
 
-import(
+import (
 	"encoding/json"
 )
 
 type QuestResponse struct {
-    ID    string
-    Title string
+	ID    string
+	Title string
 }
 
 type WorldStateResponse struct {
-    RoomItems		[]string				`json:"room_items"`
-    RoNpcsTalk		[]string				`json:"room_npcs_talk"`
-    RoNpcsHostil	[]string				`json:"room_npcs_hostil"`
-    Inventory		[]string				`json:"inventory"`
-    PlayerQuests	[]PlayerQuestResponse	`json:"player_quests"`
-    NpcQuests		[]QuestResponse			`json:"npc_quests"`
+	RoomItems    []string              `json:"room_items"`
+	RoNpcsTalk   []string              `json:"room_npcs_talk"`
+	RoNpcsHostil []string              `json:"room_npcs_hostil"`
+	Inventory    []string              `json:"inventory"`
+	PlayerQuests []PlayerQuestResponse `json:"player_quests"`
+	NpcQuests    []QuestResponse       `json:"npc_quests"`
 }
 
 type PlayerQuestResponse struct {
-    QuestID  string `json:"quest_id"`
-    Status   string `json:"status"`
-    Progress string `json:"progress"`
+	QuestID  string `json:"quest_id"`
+	Status   string `json:"status"`
+	Progress string `json:"progress"`
 }
 
 type StatusResponse struct {
-    HP		int		`json:"hp"`
-    MaxHP	int		`json:"max_hp"`
-    Status	string	`json:"status"`
-	Dmg		int		`json:"dmg"`
+	HP     int    `json:"hp"`
+	MaxHP  int    `json:"max_hp"`
+	Status string `json:"status"`
+	Dmg    int    `json:"dmg"`
 }
-
 
 type LookResponse struct {
 	Room    RoomData `json:"room"`
@@ -56,13 +55,13 @@ func (r *Room) GetStateJSON() (string, error) {
 	itemsList := []string{}
 	for _, item := range r.Items {
 		if item != nil {
-			itemsList = append(itemsList, item.ID) 
+			itemsList = append(itemsList, item.ID)
 		}
 	}
 	npcsList := []string{}
 	for _, npc := range r.Npcs {
 		if npc != nil {
-			npcsList = append(npcsList, npc.ID) 
+			npcsList = append(npcsList, npc.ID)
 		}
 	}
 	response := LookResponse{
@@ -70,7 +69,7 @@ func (r *Room) GetStateJSON() (string, error) {
 			Id:          r.Id,
 			Name:        r.Name,
 			Description: r.Description,
-			Exits:       r.Exist, 
+			Exits:       r.Exist,
 		},
 		Players: playersList,
 		Items:   itemsList,

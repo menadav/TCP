@@ -1,9 +1,8 @@
 package utils
 
 import (
-	"net"
 	"answer_protocol/src/models"
-
+	"net"
 )
 
 func ExistName(clients map[net.Conn]*models.Player, name string) bool {
