@@ -28,10 +28,6 @@ Requirements:
   development libraries.
 
 ```bash
-# GUI build dependencies (Debian/Ubuntu)
-sudo apt install -y gcc pkg-config libgl1-mesa-dev xorg-dev \
-    libxrandr-dev libxcursor-dev libxinerama-dev libxi-dev
-
 # Fetch Go module dependencies
 make install
 ```
