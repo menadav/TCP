@@ -1,33 +1,32 @@
 package models
 
 import (
-    "net"
-    "sync"
-    "answer_protocol/src/speakserver"
+	"answer_protocol/src/speakserver"
+	"net"
+	"sync"
 )
 
 type Scope string
 
 const (
-    ScopeGlobal Scope = "GLOBAL"
-    ScopeRoom   Scope = "ROOM"
-    ScopeGroup  Scope = "GROUP"
+	ScopeGlobal Scope = "GLOBAL"
+	ScopeRoom   Scope = "ROOM"
+	ScopeGroup  Scope = "GROUP"
 )
 
 type Message struct {
-    Scope    Scope
-    Filter   string
-    Category string
-    Content  string
+	Scope    Scope
+	Filter   string
+	Category string
+	Content  string
 }
 
 type Group struct {
-	Id         string
-	Leader     *Player
-	mu         sync.RWMutex
-	Members    map[net.Conn]*Player
+	Id      string
+	Leader  *Player
+	mu      sync.RWMutex
+	Members map[net.Conn]*Player
 }
-
 
 func (g *Group) AddMember(conn net.Conn, p *Player) {
 	g.mu.Lock()

@@ -1,8 +1,8 @@
 package parse
 
-import(
-	"answer_protocol/src/speakserver"
+import (
 	"answer_protocol/src/models"
+	"answer_protocol/src/speakserver"
 	"fmt"
 	"strings"
 )
@@ -13,27 +13,27 @@ func parseChat(partsChat []string, player *models.Player, h *models.Hub) {
 	scopeStr := strings.ToUpper(partsChat[0])
 	text := partsChat[1]
 	if len(text) > 40 {
-		speak.SendError(player.Conn, 203, "TEXT_TO_LONG")
+		speak.SendErr(player.Conn, speak.ErrMessageTooLong)
 		return
 	}
 	switch scopeStr {
 	case "GLOBAL":
 		msg = models.Message{
-			Scope:   models.ScopeGlobal,
-			Filter:  "",
+			Scope:    models.ScopeGlobal,
+			Filter:   "",
 			Category: "GLOBAL",
-			Content: fmt.Sprintf("CHAT %s %s", player.Name, text),
+			Content:  fmt.Sprintf("CHAT %s %s", player.Name, text),
 		}
 	case "ROOM":
 		msg = models.Message{
-			Scope:   models.ScopeRoom,
-			Filter:  player.Room.Id,
+			Scope:    models.ScopeRoom,
+			Filter:   player.Room.Id,
 			Category: "ROOM",
-			Content: fmt.Sprintf("CHAT %s %s", player.Name, text),
+			Content:  fmt.Sprintf("CHAT %s %s", player.Name, text),
 		}
 	case "GROUP":
 		if player.Group == "" {
-			speak.SendError(player.Conn, 401, "NOT_IN_GROUP")
+			speak.SendErr(player.Conn, speak.ErrNotInGroup)
 			return
 		}
 		msg = models.Message{
@@ -43,7 +43,7 @@ func parseChat(partsChat []string, player *models.Player, h *models.Hub) {
 			Content:  fmt.Sprintf("CHAT %s %s", player.Name, text),
 		}
 	default:
-		speak.SendError(player.Conn, 400, "SCOPE_INCORRECT_GLOBAL_ROOM_GROUP")
+		speak.SendErr(player.Conn, speak.ErrInvalidArgument)
 		return
 	}
 	h.Broadcast <- msg

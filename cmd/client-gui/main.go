@@ -3,9 +3,9 @@ package main
 import (
 	"answer_protocol/src/gui"
 	"answer_protocol/src/models"
-	"net"
 	"fmt"
 	"fyne.io/fyne/v2/app"
+	"net"
 )
 
 func main() {

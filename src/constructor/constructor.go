@@ -5,42 +5,42 @@ import (
 	"net"
 )
 
-func NewWorld() *models.World{
+func NewWorld() *models.World {
 	return &models.World{
-		Rooms:	make(map[string]*models.Room),
-		Items:	make(map[string]*models.Item),
-		Npcs:	make(map[string]*models.Npc),
-		Quest:	make(map[string]*models.Quest),
+		Rooms: make(map[string]*models.Room),
+		Items: make(map[string]*models.Item),
+		Npcs:  make(map[string]*models.Npc),
+		Quest: make(map[string]*models.Quest),
 	}
 }
 
-func NewHub(data *models.World) *models.Hub{
+func NewHub(data *models.World) *models.Hub {
 	return &models.Hub{
 		Register:   make(chan *models.Player),
 		Unregister: make(chan *models.Player),
 		Broadcast:  make(chan models.Message),
-		Clients: 	make(map[net.Conn]*models.Player),
+		Clients:    make(map[net.Conn]*models.Player),
 		Groups:     make(map[string]*models.Group),
-		World:		data,
+		World:      data,
 	}
 }
 
-func NewPlayer(conn_st string, conn net.Conn, name string, startRoom *models.Room) *models.Player{
+func NewPlayer(conn_st string, conn net.Conn, name string, startRoom *models.Room) *models.Player {
 	return &models.Player{
-		Id: 			conn_st,
-		Conn:			conn,
-		Name: 			name,
-		Room:			startRoom,
-		Group:			"",
-		Inventory:		[]*models.Item{},
-		Max_HP:			100,
-		HP:				100,
-		Status:			"healthy",
-		Quests:			make(map[string]*models.PlayerQuest),
-		NpcDialogueIdx:	make(map[string]int),
-		MsgChan:		make(chan models.Message, 32),
+		Id:             conn_st,
+		Conn:           conn,
+		Name:           name,
+		Room:           startRoom,
+		Group:          "",
+		Inventory:      []*models.Item{},
+		Max_HP:         100,
+		HP:             100,
+		Status:         "healthy",
+		Quests:         make(map[string]*models.PlayerQuest),
+		NpcDialogueIdx: make(map[string]int),
+		MsgChan:        make(chan models.Message, 32),
 		CombatNpc:      "",
-		Hand:			true,
-		Dmg:			5,
+		Hand:           true,
+		Dmg:            5,
 	}
 }

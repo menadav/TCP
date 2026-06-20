@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func main(){
+func main() {
 	conn, err := net.Dial("tcp", ":8080")
 	if err != nil {
 		fmt.Println("Error connecting:", err)

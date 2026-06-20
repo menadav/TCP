@@ -1,12 +1,12 @@
 package parse
 
 import (
+	"answer_protocol/src/game"
 	"answer_protocol/src/models"
 	"answer_protocol/src/speakserver"
-	"answer_protocol/src/game"
 	"encoding/json"
-	"strings"
 	"fmt"
+	"strings"
 )
 
 func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
@@ -24,7 +24,7 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 		switch command {
 		case "USE_ITEM", "DEFEND", "FLEE", "STATUS", "REQ":
 			if argument != "" {
-				speak.SendError(player.Conn, 400, "ONLY_ARGUMENT")
+				speak.SendErr(player.Conn, speak.ErrUnexpectedArgument)
 				return
 			}
 			if command == "USE_ITEM" {
@@ -43,37 +43,37 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 				game.ShowStatus(player)
 				return
 			}
-			if command == "REQ"{
+			if command == "REQ" {
 				return
 			}
 		default:
-			speak.SendError(player.Conn, 403, "IN_COMBAT_ONLY_ATTACK_DEFEND_FLEE")
+			speak.SendErr(player.Conn, speak.ErrCommandInCombat)
 			return
 		}
 	}
 	switch command {
 	case "LOOK", "INVENTORY", "STATUS", "QUESTS", "WHO", "QUIT":
 		if argument != "" {
-			speak.SendError(player.Conn, 400, "Only command, no arguments allowed")
+			speak.SendErr(player.Conn, speak.ErrUnexpectedArgument)
 			return
 		}
-		if command == "LOOK"{
+		if command == "LOOK" {
 			game.ShowRoom(player, h)
 			return
 		}
-		if command == "INVENTORY"{
+		if command == "INVENTORY" {
 			game.ShowInventory(player)
 			return
-    	}
-		if command == "STATUS"{
+		}
+		if command == "STATUS" {
 			game.ShowStatus(player)
 			return
 		}
-		if command == "QUESTS"{
+		if command == "QUESTS" {
 			game.ShowQuest(player)
 			return
 		}
-		if command == "WHO"{
+		if command == "WHO" {
 			game.ShowWho(player, h)
 			return
 		}
@@ -84,7 +84,7 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 		}
 	case "MOVE":
 		if argument == "" {
-			speak.SendError(player.Conn, 400, "Move requires a destination")
+			speak.SendErr(player.Conn, speak.ErrMissingArgument)
 			return
 		}
 		argument = strings.ToUpper(argument)
@@ -93,84 +93,85 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 			game.MapMove(player, argument, h)
 			return
 		default:
-			speak.SendError(player.Conn, 301, "NO_EXIT")
+			speak.SendErr(player.Conn, speak.ErrNoExit)
 		}
 	case "CHAT":
 		if argument == "" {
-			speak.SendError(player.Conn, 400, "Chat requires a scope and a message")
+			speak.SendErr(player.Conn, speak.ErrMissingArgument)
 			return
 		}
 		partsChat := strings.SplitN(argument, " ", 2)
 		if len(partsChat) < 2 {
-			speak.SendError(player.Conn, 400, "Chat format invalid. Use: CHAT <SCOPE> <MESSAGE>")
+			speak.SendErr(player.Conn, speak.ErrMalformedCommand)
 			return
 		}
 		parseChat(partsChat, player, h)
 	case "TAKE":
 		if argument == "" {
-			speak.SendError(player.Conn, 400, "TAKE requires an item name")
+			speak.SendErr(player.Conn, speak.ErrMissingArgument)
 			return
 		}
 		game.TakeItem(player, argument, h)
 	case "DROP":
 		if argument == "" {
-			speak.SendError(player.Conn, 400, "DROP requires an item name")
+			speak.SendErr(player.Conn, speak.ErrMissingArgument)
 			return
 		}
 		game.DropItem(player, argument)
 	case "TALK":
 		if argument == "" {
-			speak.SendError(player.Conn, 400, "TALK requires an NPC id")
+			speak.SendErr(player.Conn, speak.ErrMissingArgument)
 			return
 		}
 		game.TalkNpc(player, argument)
 	case "QUEST":
 		if argument == "" {
-			speak.SendError(player.Conn, 400, "QUEST requires an action and quest_id")
+			speak.SendErr(player.Conn, speak.ErrMissingArgument)
 			return
 		}
 		partsQuest := strings.SplitN(argument, " ", 2)
 		if len(partsQuest) < 2 {
-			speak.SendError(player.Conn, 400, "Usage: QUEST <ACCEPT|COMPLETE> <quest_id>")
+			speak.SendErr(player.Conn, speak.ErrMalformedCommand)
 			return
 		}
 		game.ManageQuest(player, h, partsQuest[0], partsQuest[1])
 	case "ATTACK":
 		if argument == "" {
-			speak.SendError(player.Conn, 400, "Atack need a target")
+			speak.SendErr(player.Conn, speak.ErrMissingArgument)
 			return
 		}
 		game.StartAttack(player, argument, h)
 	case "GROUP":
 		if argument == "" {
+			speak.SendErr(player.Conn, speak.ErrMissingArgument)
 			return
 		}
 		partsGroup := strings.Split(argument, " ")
 		parseGroup(partsGroup, player, h)
 	case "REQ":
-        player.Conn.Write([]byte{0x03})
-        if player.Room != nil {
-            player.Room.Mu.RLock()
-            for i, npc := range player.Room.Npcs {
-                if npc == nil {
-                    fmt.Printf("   [%d] El puntero del NPC es NIL\n", i)
-                    continue
-                }
-            }
-            player.Room.Mu.RUnlock()
-        }
-        state := models.WorldStateResponse{
-            RoomItems:    player.GetCurrentRoomItemIDs(),
-            RoNpcsTalk:   player.GetCurrentRoomNpcIDsTalk(),
+		player.Conn.Write([]byte{0x03})
+		if player.Room != nil {
+			player.Room.Mu.RLock()
+			for i, npc := range player.Room.Npcs {
+				if npc == nil {
+					fmt.Printf("   [%d] El puntero del NPC es NIL\n", i)
+					continue
+				}
+			}
+			player.Room.Mu.RUnlock()
+		}
+		state := models.WorldStateResponse{
+			RoomItems:    player.GetCurrentRoomItemIDs(),
+			RoNpcsTalk:   player.GetCurrentRoomNpcIDsTalk(),
 			RoNpcsHostil: player.GetCurrentRoomNpcIDsHostil(),
-            Inventory:    player.GetInventoryItemIDs(),
-            PlayerQuests: player.GetPlayerQuestsList(),
-            NpcQuests:    player.GetRoomNpcQuests(), 
-        }
-        json.NewEncoder(player.Conn).Encode(state)
-        return
+			Inventory:    player.GetInventoryItemIDs(),
+			PlayerQuests: player.GetPlayerQuestsList(),
+			NpcQuests:    player.GetRoomNpcQuests(),
+		}
+		json.NewEncoder(player.Conn).Encode(state)
+		return
 	default:
-		speak.SendError(player.Conn, 400, "Unknown command")
+		speak.SendErr(player.Conn, speak.ErrUnknownCommand)
 		return
 	}
 }
