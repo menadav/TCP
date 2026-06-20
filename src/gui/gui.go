@@ -10,6 +10,7 @@ import (
 
     "fyne.io/fyne/v2"
     "fyne.io/fyne/v2/container"
+    "fyne.io/fyne/v2/layout"
     "fyne.io/fyne/v2/widget"
 )
 
@@ -40,6 +41,7 @@ func Start(app fyne.App, player *models.Player) {
         currentMenu:   "exploration",
     }
     ui.ChatInput.SetPlaceHolder("Type command or chat...")
+    ui.MudConsole.Wrapping = fyne.TextWrapWord
     go ui.listenServer()
     ui.setupLayout()
     ui.Window.Resize(fyne.NewSize(900, 600))
@@ -111,12 +113,17 @@ func (ui *GameUI) setupLayout() {
         widget.NewButton("Group", func() { ui.ChatInput.SetText("CHAT GROUP ") }),
     )
 
-    movePanel := container.NewHBox(container.NewHBox(
-        widget.NewButton("^ N", func() { ui.sendCommand("MOVE NORTH") }),
-        widget.NewButton("< W", func() { ui.sendCommand("MOVE WEST") }),
-        widget.NewButton("> E", func() { ui.sendCommand("MOVE EAST") }),
-        widget.NewButton("v S", func() { ui.sendCommand("MOVE SOUTH") }),
-    ))
+    movePanel := container.NewGridWithColumns(3,
+        layout.NewSpacer(),
+        widget.NewButton("N", func() { ui.sendCommand("MOVE NORTH") }),
+        layout.NewSpacer(),
+        widget.NewButton("W", func() { ui.sendCommand("MOVE WEST") }),
+        layout.NewSpacer(),
+        widget.NewButton("E", func() { ui.sendCommand("MOVE EAST") }),
+        layout.NewSpacer(),
+        widget.NewButton("S", func() { ui.sendCommand("MOVE SOUTH") }),
+        layout.NewSpacer(),
+    )
 
     btnSend := widget.NewButton("Send", func() {
         if ui.ChatInput.Text != "" {
