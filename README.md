@@ -1,118 +1,313 @@
-===================================================================================================================================================
+*This project has been created as part of the 42 curriculum by dmena-li, egalindo.*
 
--Explicacion Breve.
-Go es un lenguaje que compila a diferencia de python. Tambien tiene un Garbage Collector que no hace falta liberar memoria de variables.
-- Concurrencia:
-Go Destaca por su concurrencia es trabajo con Threads como con packete "net" crea hilos internamete eficientes ocupado casi nada de memoria.
+# TAP — The Answer Protocol
 
-C utiliza hilos del sistema operativo
-Go utiliza Goroutines
-    Gortuines: son hilos gestionados por el propio entorno de ejecución (runtime)
+A shared-world, retro text adventure (a small MUD) built around a line-based TCP
+protocol. A single server hosts a persistent-feeling world; multiple players
+connect at the same time with either a **CLI client** or a **GUI client** and can
+explore rooms, chat, fight NPCs, form groups and complete quests in real time.
 
-         C  |  Go
-Memory  1MB    2KB  (Pero puede ir creciendo)
-Create  slow   fast
+## Description
 
-===================================================================================================================================================
+The goal of the project is to implement a complete multiplayer text adventure:
 
-Flujo  Programa:
-start -> go run cmd/server/main.go
-- [server]Escucho puerto.                               ->	listen, err := net.Listen("tcp", ":8080")
-- [server]Si cierra el programa cierra la net		    -> 	defer listen.Close()
-- [server]Construimos un hub que contendra los canales  -> 	hub := constructor.NewHub()
-- [server]La hacemos trabajar en segundo plano hilo     ->  go hub.run()
-- [server]Entramos while infinito (for {})
-- [server]Se freezea para esperar la llamada de un user ->	conn, err := listen.Accept()
-go run cmd/client-cli/main.go
-- [client]Llamamos al puerto del server		 	        ->	conn, err := net.Dial("tcp", ":8080")
-- [client]Si cierra el programa cierra la net	 	    ->	defer conn.Close()
-go run cmd/server/main.go
-- [server]Registra al user al Hub de canales		    ->	hub.Register <- conn
-- [server]Creamos Hilo que ejecutar lectura user        -> 	go network.ClientAtender(conn, hub)
-- [server] -> [Cliente] comunicados
-go run cmd/client-cli/main.go
-- [client]Creare un segundo plano que leea server	    ->	go readServer
-- [client]Podra escribir por terminal , que enviara [server] con su conexion de net.dial
-Conseguimos una comunicacion Bidimensional [server]---[client]
+- A **server** that loads a static world (`data.yaml`), accepts many concurrent
+  clients over TCP and speaks a simple, line-based protocol (`OK` / `ERR` / `EVT`).
+- A **CLI client** for text interaction.
+- A **GUI client** (built with [Fyne](https://fyne.io/)) for a richer interface.
 
+State lives only in memory: it resets when the server restarts (no persistence
+is required).
 
-===================================================================================================================================================
+## Instructions
 
+Requirements:
 
-FASE 1: Conectar server 
-	Lograr que el Servidor acepte un cliente, le mande un saludo, y que el Cliente (CLI) lo reciba y lo pinte en pantalla usando tu paquete network.
+- **Go** ≥ 1.18 (developed and tested with 1.24).
+- For the **GUI** client only (Fyne uses cgo): a C compiler and X11/OpenGL
+  development libraries.
 
-FASE 2: Recibir llamadas cli -> server y Concurrirlas con rutinas
-	Lograr que el Cliente envie mensaje al server y le devuelva una respuesta simultanea con hilos
+```bash
+# GUI build dependencies (Debian/Ubuntu)
+sudo apt install -y gcc pkg-config libgl1-mesa-dev xorg-dev \
+    libxrandr-dev libxcursor-dev libxinerama-dev libxi-dev
 
-Fase 3: Recibir llamadas todos los clientes.
-	Lograr que el cliente envie mensaje al server y devuelva a TODOS Broadcast .
+# Fetch Go module dependencies
+make install
+```
 
-Fase 4: Autentificador
-    Lograr un bucle si no escribe correctamente los comandos para connectar
+See **Building and Running** below for the full target list.
 
-Fase 5: Crear Formato Chat.
-    Depende lo que escriba el usuario hacer una accion o otra. Mirar, Escribir todos.
+## Resources
 
-Fase 6: Crear Formato Grupo.
-    Que jugador interacione con invitar, uniser dejar grupo.
+- Go standard library — [`net`](https://pkg.go.dev/net) and
+  [`bufio`](https://pkg.go.dev/bufio) packages.
+- [Effective Go](https://go.dev/doc/effective_go) and the
+  [Go Memory Model](https://go.dev/ref/mem) (goroutines, channels).
+- [Fyne toolkit documentation](https://developer.fyne.io/).
+- Background on MUDs (Multi-User Dungeons) as the historical inspiration.
 
-Fase 7: Crear Parseo lineas jugador.
-    Que jugador depende lo que escriba se parse.
+**Use of AI:** AI assistance (Claude) was used as a helper for: designing and
+documenting the error-code catalog, setting up the build tooling (`Makefile`),
+drafting this README, and reviewing the code against the project requirements.
+All generated content was reviewed and is understood by the team.
 
-Fase 8: Crear Struct World y constructor.
+## Architecture
 
-Fase 9: Unificar Data con Hub.
+The server uses a **central hub + one goroutine per client** model with channels
+for coordination (no shared global mutable state passed around by hand):
 
-Fase 10: Crear Comandos Mundo.
+- `cmd/server` opens the TCP listener and, for each accepted connection, spawns
+  `network.ClientAtender` in its own goroutine.
+- `models.Hub` runs in a single goroutine (`Hub.Run`) and owns the maps of
+  connected clients and groups. Connections talk to it through channels:
+  `Register`, `Unregister` and `Broadcast`. This serializes all global state
+  changes and avoids races on the client map.
+- Each player has a buffered `MsgChan` and a dedicated `ListenMsg` goroutine that
+  writes asynchronous events (`EVT ...`) to that player's socket. This keeps the
+  clients responsive while receiving events.
+- Per-entity locks (`sync.RWMutex`) protect `Room`, `Player` and `Group` state.
 
-Fase 11: Actualizar funciones para interacturar con el mundo
-        Inventory, Look, Status, Who   Importante Checkear misiones Quests
+Command handling is **inline dispatch**: `parse.ParseCommandCli` is a `switch`
+that validates arguments and calls the matching handler in `src/game`. We chose
+inline handling over a dispatcher/router because the command set is small and
+fixed, which keeps the flow easy to read and review.
 
-Fase 12: Crear comandos de desplazamiento.
+```
+cmd/server ──► network.ClientAtender (1 goroutine/client)
+                     │
+                     ├─ network.Authentication        (CONNECT handshake)
+                     ├─ parse.ParseCommandCli ──► src/game/*  (command handlers)
+                     └─ player.ListenMsg (1 goroutine/client) ──► EVT events
+                     ▲
+   models.Hub.Run ───┘  (single goroutine: Register / Unregister / Broadcast)
+```
 
-Fase 13: Crear comandos Take/Drop
+## Protocol Implementation
 
-===================================================================================================================================================
+- Transport: TCP, UTF-8, **one message per line** (`\n` terminated).
+- On connect the server greets with `OK hello proto=1`; the client must then send
+  `CONNECT <name>` (3–12 letters, unique) before any other command.
+- Replies use three line prefixes:
+  - `OK <payload>` — success (`payload` may be `key=value` or a JSON object).
+  - `ERR <code> <SYMBOL>` — error (see **Error Codes**).
+  - `EVT <category> <data>` — asynchronous event (chat, presence, combat, group…).
 
-package main -> Obligatorio para poder compilar.
-package: Si tienes mas de un script en la misma raiz , todos contendran el mismo name 
-package <name>
-Los files en la misma raiz se reconozen , no hace falta llamarlas de que package vienen.
-- Diferente raiz:  network.function()
-- Misma Raiz:	   function()
+### Deviations from RFC 42TAP
 
+The RFC leaves many details to each group; the following are our explicit choices
+/ deviations and are documented here as required:
 
-[go run <file>]
-[go build <file>]
+- **`REQ`** is a non-standard helper command used by our GUI client to refresh its
+  view. It replies with a compact JSON snapshot (`WorldStateResponse`) of the
+  current room items, NPCs, inventory and quests. It is specific to our client
+  pair and is not part of the standard command set.
+- **In-combat attack** is issued with `USE_ITEM` (mapped to the attack action)
+  while a player is in the `combat` state; `ATTACK <npc>` is used to *start*
+  combat. Additional combat commands `DEFEND` and `FLEE` are our design choice.
+- **`WHO`** replies with `OK players=[...]` (the list of connected players).
+- **`INVENTORY`** replies with the JSON array of the player's items.
 
-"fmt" -> Include prints (Parecido <stdio.h>)
-"net" -> Include para trabajar con Net con Hilos
-"bufio" -> Include para controlar \n  .Scanner
+### Error Codes
 
-:=  -> DECLARAR variable, si queremos darle otro valor es con "="
-defer -> Is finally like a python
-<variable> <error> := <class>.<methode>("tcp", ":8080") -> segunda variable es para enviar el error como except pero hay que checkearlo.
-<function> |make| -> Se usa para 3 tipos:
- - Slices:  ej buffer := make([]byte, 0, 1024) | numeros := make([]int, 5) 
- - Maps/Dict: ej edades := make(map[string]int) | jugadores := make(map[string]net.Conn, 100) 
- - Channels: ej mensaje := make(chan string) | colaTareas := make(chan int, 10)
-if err != nil {return} -> No hay try,except. Se comprueba los errores similar a C.
+All error codes are declared in a single source of truth:
+`src/speakserver/errors.go`. Every error is one line: `ERR <code> <SYMBOL>` where
+`<code>` is a 3-digit number and `<SYMBOL>` is a stable, space-free token.
 
-===================================================================================================================================================
+The first digit groups the error by domain:
 
-go.mod
-    Es un requeriments.txt 
+| Range | Domain                    |
+|-------|---------------------------|
+| 1xx   | Protocol / command syntax |
+| 2xx   | Session / authentication  |
+| 3xx   | World / movement          |
+| 4xx   | Items                     |
+| 5xx   | NPCs                      |
+| 6xx   | Combat                    |
+| 7xx   | Quests                    |
+| 8xx   | Groups                    |
+| 9xx   | Server                    |
 
-===================================================================================================================================================
+| Code | Symbol | Meaning |
+|------|--------|---------|
+| 100 | `MALFORMED_COMMAND` | The command could not be parsed |
+| 101 | `UNKNOWN_COMMAND` | Command not recognized |
+| 102 | `MISSING_ARGUMENT` | A required argument is missing |
+| 103 | `UNEXPECTED_ARGUMENT` | An argument was given to a command that takes none |
+| 104 | `INVALID_ARGUMENT` | The argument value is not valid (bad chat scope, bad group action…) |
+| 105 | `MESSAGE_TOO_LONG` | Chat message exceeds the allowed length |
+| 200 | `NAME_IN_USE` | The requested name is already connected |
+| 201 | `NAME_TOO_SHORT` | Name has fewer than 3 characters |
+| 202 | `NAME_TOO_LONG` | Name has more than 12 characters |
+| 203 | `NAME_INVALID` | Name contains characters other than letters |
+| 204 | `CONNECTION_TIMEOUT` | The connection timed out (auth or inactivity) |
+| 300 | `NO_EXIT` | There is no exit in that direction |
+| 301 | `NOT_IN_ROOM` | The player is not currently in a room |
+| 400 | `ITEM_NOT_FOUND` | No matching item in the room/inventory |
+| 401 | `ITEM_NOT_OBTAINABLE` | The item cannot be taken |
+| 402 | `HANDS_FULL` | The player already holds a weapon |
+| 500 | `NPC_NOT_FOUND` | No matching NPC in the room |
+| 501 | `NPC_NO_DIALOGUE` | The NPC has no dialogue |
+| 502 | `NPC_NOT_HOSTILE` | Cannot attack a non-hostile NPC |
+| 503 | `NPC_HOSTILE` | Cannot talk to a hostile NPC |
+| 600 | `NOT_IN_COMBAT` | The action requires being in combat |
+| 601 | `ALREADY_IN_COMBAT` | The NPC is already engaged in combat |
+| 602 | `TARGET_GONE` | The combat target no longer exists |
+| 603 | `TARGET_DEFEATED` | The NPC is already defeated |
+| 604 | `COMMAND_NOT_ALLOWED_IN_COMBAT` | Only USE_ITEM/DEFEND/FLEE/STATUS are allowed in combat |
+| 700 | `QUEST_NOT_FOUND` | No quest with that id |
+| 701 | `QUEST_ALREADY_ACTIVE` | The quest is already in progress |
+| 702 | `QUEST_ALREADY_COMPLETED` | The quest is already completed |
+| 703 | `QUEST_NOT_ACTIVE` | The quest is not in progress |
+| 704 | `OBJECTIVE_INCOMPLETE` | The quest objective is not yet met |
+| 705 | `MISSING_REQUIRED_ITEM` | The required item is not in the inventory |
+| 800 | `NOT_IN_GROUP` | The player is not in a group |
+| 801 | `ALREADY_IN_GROUP` | The player is already in a group |
+| 802 | `GROUP_NOT_FOUND` | No group matches the request |
+| 803 | `NOT_GROUP_LEADER` | Only the group leader can perform this action |
+| 804 | `USER_NOT_FOUND` | No connected user with that name |
+| 900 | `INTERNAL_ERROR` | Unexpected server-side error |
 
-go.sum 
+## Combat System
 
-===================================================================================================================================================
+Turn-based, player-initiated combat:
 
-2: enp4s0f0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
-    link/ether 18:7e:b9:08:7a:a4 brd ff:ff:ff:ff:ff:ff
-    inet 10.11.14.6/16 metric 100 brd 10.11.255.255 scope global enp4s0f0
-       valid_lft forever preferred_lft forever
-    inet6 fe80::1a7e:b9ff:fe08:7aa4/64 scope link 
-       valid_lft forever preferred_lft forever
+- Players start with **100 HP**. `ATTACK <npc>` starts combat against a hostile
+  NPC and puts the player in the `combat` state.
+- While in combat the allowed commands are `USE_ITEM` (attack), `DEFEND`, `FLEE`
+  and `STATUS`; any other command is rejected with `604`.
+- **Damage formula:** player damage = `weapon damage + rand(0..4)`. Unarmed base
+  damage is `5`; picking up a weapon item (`hand: true`) sets the player's damage
+  to that item's `dmg`. Dropping the weapon resets to unarmed.
+- **Counter-attack:** after a non-lethal hit the NPC deals its `attack_dmg`.
+  `DEFEND` halves the incoming damage that turn.
+- **FLEE** leaves combat with no damage.
+- **Respawn:** a player reaching 0 HP respawns at the safe start room with half of
+  max HP.
+- Combat progress is pushed to the player as `EVT COMBAT ...` and victories are
+  broadcast to the room.
+
+## Quest System
+
+Quests are defined in `data.yaml` and tracked per player:
+
+- **Types:** `collect` (gather an item), `kill` (defeat an NPC), `explore` (reach a
+  room) and `deliver`.
+- `QUEST ACCEPT <id>` starts a quest; objective progress is updated automatically
+  as the player kills the target NPC, visits the required room or collects the
+  required item (`PlayerQuest` flags `NpcKilled` / `RoomVisited` / `ItemCollected`).
+- `QUEST COMPLETE <id>` validates the objective; on success it consumes the
+  required item (if any) and grants the reward item. Invalid attempts return the
+  matching `7xx` error.
+- `QUESTS` lists the player's quests with their status and progress.
+
+## World Design
+
+The world (`data.yaml`) has **10 interconnected rooms**, a set of items (weapons
+and quest items, some not obtainable), quest-giver NPCs (Frodo, Aragorn, Bilbo,
+Gandalf, Legolas, Treebeard) and hostile NPCs (Gollum, the Warg, the Balrog).
+
+All exits are bidirectional. Directions shown on each link:
+
+```
+                       +--------------+
+                       |   buckland   |
+                       | (Bucklebury) |
+                       +------+-------+
+                          N   |   S
+                       +------+-------+   E    +-----------------+
+                       |    START     |------->|  green_dragon   |
+                       |  (Bag End)   |<-------| (Green Dragon)  |
+                       +------+-------+   W    +-----------------+
+                          S   |   N
+                       +------+-------+
+                       | bywater_road |
+                       +------+-------+
+                          S   |   N
+  +------------+   W     +----+-----+    E    +---------------+
+  | weathertop |<--------|   bree   |-------->|   lothlorien  |
+  | (Amon Sul) |-------->|  (Pony)  |<--------| (Golden Wood) |
+  +------------+   E     +----+-----+    W    +---------------+
+                          S   |   N
+                       +------+-------+
+                       |  rivendell   |
+                       +------+-------+
+                          S   |   N
+                       +------+-------+
+                       |    moria     |
+                       +------+-------+
+                          S   |   N
+                       +------+-------+
+                       | cirith_ungol |
+                       +--------------+
+```
+
+| Room | NPCs | Notable items |
+|------|------|---------------|
+| start (Bag End) | Frodo, Bilbo | Wooden Training Sword, Lembas Bread |
+| buckland | — | Ale, Hobbit Dagger |
+| green_dragon | — | Ale, Horn of Gondor |
+| bywater_road | — | Athelas Leaves |
+| bree (Prancing Pony) | Aragorn | Ale, Ranger's Blade |
+| weathertop | Gandalf | Athelas, Morgul Blade |
+| lothlorien | Treebeard | Phial of Galadriel, Sting |
+| rivendell | Legolas | Lembas, Palantír Shard |
+| moria | Gollum (hostile) | Mithril Shirt, Andúril |
+| cirith_ungol | Warg, Balrog (hostile) | — |
+
+## Server Logging
+
+The server currently logs key lifecycle events (server start, client connect /
+disconnect with remote address, inactivity timeouts and respawn/world errors) to
+standard output.
+
+> Status: structured logging (JSON format, INFO/WARN/ERROR levels, full
+> command/response logging and abuse-pattern detection) is planned and not yet
+> complete.
+
+## Group Contributions
+
+> TODO (team): replace with each member's real responsibilities.
+
+| Member | Responsibilities |
+|--------|------------------|
+| dmena-li | Server implementation, CLI client |
+| egalindo | GUI client, world design |
+
+## Building and Running
+
+The build tool is **GNU Make** wrapping the Go toolchain. Available targets:
+
+| Target | Description |
+|--------|-------------|
+| `make install` | Download module dependencies (`go mod download`) |
+| `make build` | Compile server, CLI and GUI into `./bin` |
+| `make run-server` | Start the TCP server (listens on `:8080`) |
+| `make run-client` | Start the CLI client |
+| `make run-client-gui` | Start the GUI client |
+| `make lint` | `gofmt` check + `go vet` |
+| `make fmt-fix` | Reformat the code with `gofmt -w` |
+| `make clean` | Remove built binaries |
+
+Typical session (separate terminals):
+
+```bash
+make run-server        # terminal 1
+make run-client        # terminal 2
+make run-client-gui    # terminal 3
+```
+
+## Testing
+
+Multiplayer features are tested manually by running the server and connecting
+several clients at once:
+
+- **Presence & chat:** connect two clients, `MOVE` one between rooms and confirm
+  the other receives `EVT ROOM PRESENCE ENTER/LEAVE`; send `CHAT GLOBAL/ROOM/GROUP`
+  and confirm scope-correct delivery.
+- **Items:** `TAKE` an item with one client and confirm it disappears from the
+  room for the other (`LOOK`), then `DROP` and confirm it reappears.
+- **Combat:** `ATTACK` a hostile NPC, then exercise `USE_ITEM` / `DEFEND` / `FLEE`,
+  check `STATUS`, and verify respawn at 0 HP.
+- **Quests:** `TALK` to a quest-giver, `QUEST ACCEPT`, fulfil the objective and
+  `QUEST COMPLETE`, checking `QUESTS` progress and the reward in `INVENTORY`.

@@ -9,12 +9,12 @@ import (
 func ShowRoom(player *models.Player, h *models.Hub) {
 	room := player.Room
 	if room == nil {
-		speak.SendError(player.Conn, 400, "NOT_ROOM")
+		speak.SendErr(player.Conn, speak.ErrNotInRoom)
 		return
 	}
 	roomJSON, err := room.GetStateJSON()
 	if err != nil {
-		speak.SendError(player.Conn, 900, "INTERNAL_ERROR")
+		speak.SendErr(player.Conn, speak.ErrInternal)
 		return
 	}
 	speak.SendSuccess(player.Conn, roomJSON)
@@ -24,23 +24,22 @@ func ShowInventory(player *models.Player) {
 	inventory := player.GetInventory()
 	bytesJSON, err := json.Marshal(inventory)
 	if err != nil {
-		speak.SendError(player.Conn, 900, "INTERNAL_ERROR")
+		speak.SendErr(player.Conn, speak.ErrInternal)
 		return
 	}
 	speak.SendSuccess(player.Conn, string(bytesJSON))
 }
 
-
-func ShowStatus(player *models.Player){
-	status := models.StatusResponse {
-		HP:		player.GetHp(),
-		MaxHP:	player.GetMaxHp(),
-		Status:	player.GetStatus(),
-		Dmg:	player.GetDmg(),
+func ShowStatus(player *models.Player) {
+	status := models.StatusResponse{
+		HP:     player.GetHp(),
+		MaxHP:  player.GetMaxHp(),
+		Status: player.GetStatus(),
+		Dmg:    player.GetDmg(),
 	}
 	bytesJSON, err := json.Marshal(status)
 	if err != nil {
-		speak.SendError(player.Conn, 900, "INTERNAL_ERROR")
+		speak.SendErr(player.Conn, speak.ErrInternal)
 		return
 	}
 	speak.SendSuccess(player.Conn, string(bytesJSON))
@@ -48,20 +47,20 @@ func ShowStatus(player *models.Player){
 
 func ShowQuest(player *models.Player) {
 	questsList := player.GetQuestsResponse()
-    bytesJSON, err := json.Marshal(questsList)
-    if err != nil {
-        speak.SendError(player.Conn, 900, "INTERNAL_ERROR")
-        return
-    }
-    speak.SendSuccess(player.Conn, string(bytesJSON))
+	bytesJSON, err := json.Marshal(questsList)
+	if err != nil {
+		speak.SendErr(player.Conn, speak.ErrInternal)
+		return
+	}
+	speak.SendSuccess(player.Conn, string(bytesJSON))
 }
 
 func ShowWho(player *models.Player, h *models.Hub) {
 	nameList := h.GetOnlinePlayersNames()
 	bytesJSON, err := json.Marshal(nameList)
-    if err != nil {
-        speak.SendError(player.Conn, 900, "INTERNAL_ERROR")
-        return
-    }
-    speak.SendSuccess(player.Conn, "players=" + string(bytesJSON))
+	if err != nil {
+		speak.SendErr(player.Conn, speak.ErrInternal)
+		return
+	}
+	speak.SendSuccess(player.Conn, "players="+string(bytesJSON))
 }

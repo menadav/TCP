@@ -1,27 +1,27 @@
 package parse
 
-import(
+import (
+	"answer_protocol/src/models"
 	"answer_protocol/src/speakserver"
 	"answer_protocol/src/utils"
-	"net"
-	"answer_protocol/src/models"
 	"fmt"
+	"net"
 	"strings"
 )
 
-func parseGroup(partsGroup []string, player *models.Player, h *models.Hub){
+func parseGroup(partsGroup []string, player *models.Player, h *models.Hub) {
 	action := strings.ToUpper(partsGroup[0])
-	switch action{
+	switch action {
 	case "CREATE":
 		if player.Group != "" {
-			speak.SendError(player.Conn, 403, "Already in a group")
+			speak.SendErr(player.Conn, speak.ErrAlreadyInGroup)
 			return
 		}
 		groupID := "grp_" + player.Name
 		newGroup := &models.Group{
-			Id:			groupID,
-			Leader:		player,
-			Members:	make(map[net.Conn]*models.Player),
+			Id:      groupID,
+			Leader:  player,
+			Members: make(map[net.Conn]*models.Player),
 		}
 		newGroup.AddMember(player.Conn, player)
 		player.Group = groupID
@@ -29,25 +29,25 @@ func parseGroup(partsGroup []string, player *models.Player, h *models.Hub){
 		speak.SendSuccess(player.Conn, fmt.Sprintf("group=%s", groupID))
 	case "INVITE":
 		if player.Group == "" {
-			speak.SendError(player.Conn, 403, "You are not in a group")
+			speak.SendErr(player.Conn, speak.ErrNotInGroup)
 			return
 		}
 		actualGroup, exist := h.Groups[player.Group]
 		if !exist {
-            speak.SendError(player.Conn, 404, "Group not found in server records")
-            return
-        }
+			speak.SendErr(player.Conn, speak.ErrGroupNotFound)
+			return
+		}
 		if actualGroup.Leader != player {
-            speak.SendError(player.Conn, 403, "Only the leader can invite players")
-            return
-        }
+			speak.SendErr(player.Conn, speak.ErrNotGroupLeader)
+			return
+		}
 		if len(partsGroup) < 2 {
-			speak.SendError(player.Conn, 403, "Missing username to invite")
+			speak.SendErr(player.Conn, speak.ErrMissingArgument)
 			return
 		}
 		targetUsername := partsGroup[1]
-		if !utils.ExistName(h.Clients ,targetUsername) {
-			speak.SendError(player.Conn, 404, "User not found")
+		if !utils.ExistName(h.Clients, targetUsername) {
+			speak.SendErr(player.Conn, speak.ErrUserNotFound)
 			return
 		}
 		var targetPlayer *models.Player
@@ -58,22 +58,22 @@ func parseGroup(partsGroup []string, player *models.Player, h *models.Hub){
 			}
 		}
 		if targetPlayer == nil {
-			speak.SendError(player.Conn, 404, "User log out or not found")
+			speak.SendErr(player.Conn, speak.ErrUserNotFound)
 			return
 		}
 		if targetPlayer.Group != "" {
-			speak.SendError(player.Conn, 403, "ALREADY_IN_GROUP	")
+			speak.SendErr(player.Conn, speak.ErrAlreadyInGroup)
 			return
 		}
-		speak.SendEvent(targetPlayer.Conn, "GROUP INVITE", player.Name )
+		speak.SendEvent(targetPlayer.Conn, "GROUP INVITE", player.Name)
 		speak.SendSuccess(player.Conn, "")
 	case "JOIN":
 		if player.Group != "" {
-			speak.SendError(player.Conn, 403, "Already in a group. Leave current group first.")
+			speak.SendErr(player.Conn, speak.ErrAlreadyInGroup)
 			return
 		}
 		if len(partsGroup) < 2 {
-			speak.SendError(player.Conn, 400, "Missing leader name to join")
+			speak.SendErr(player.Conn, speak.ErrMissingArgument)
 			return
 		}
 		leaderName := partsGroup[1]
@@ -86,7 +86,7 @@ func parseGroup(partsGroup []string, player *models.Player, h *models.Hub){
 			}
 		}
 		if targetGroup == nil {
-			speak.SendError(player.Conn, 404, "No active group found with that leader")
+			speak.SendErr(player.Conn, speak.ErrGroupNotFound)
 			return
 		}
 		h.Broadcast <- models.Message{
@@ -99,47 +99,47 @@ func parseGroup(partsGroup []string, player *models.Player, h *models.Hub){
 		player.Group = targetGroup.Id
 		speak.SendSuccess(player.Conn, fmt.Sprintf("group=%s", targetGroup.Id))
 	case "LEAVE":
-        if player.Group == "" {
-            speak.SendError(player.Conn, 401, "NOT_IN_GROUP")
-            return
-        }
-        groupID := player.Group
-        if group, exist := h.Groups[groupID]; exist {
-            isLeader := group.Leader == player
-            All_group := group.RemoveMember(player.Conn)
-            player.Group = ""
-            speak.SendSuccess(player.Conn, "")
-            if isLeader {
-                for _, member := range group.Members { 
-                    speak.SendError(member.Conn, 400, "GROUP_DISBANDED") 
-                    member.Group = ""
-                }
-                h.Broadcast <- models.Message{
-                    Scope:    models.ScopeGroup,
-                    Filter:   groupID,
-                    Category: "GROUP",
-                    Content:  "DISBAND " + player.Name,
-                }
-                delete(h.Groups, groupID)
-            } else if All_group == 0 {
-                h.Broadcast <- models.Message{
-                    Scope:    models.ScopeGroup,
-                    Filter:   groupID,
-                    Category: "GROUP",
-                    Content:  "LEAVE " + player.Name,
-                }
-                delete(h.Groups, groupID)
-            } else {
-                h.Broadcast <- models.Message{
-                    Scope:    models.ScopeGroup,
-                    Filter:   groupID,
-                    Category: "GROUP",
-                    Content:  "LEAVE " + player.Name,
-                }
-            }
-        }
-    default:
-        speak.SendError(player.Conn, 400, "Unknown group action. Use CREATE, INVITE, or JOIN")
-        return
-    }
+		if player.Group == "" {
+			speak.SendErr(player.Conn, speak.ErrNotInGroup)
+			return
+		}
+		groupID := player.Group
+		if group, exist := h.Groups[groupID]; exist {
+			isLeader := group.Leader == player
+			All_group := group.RemoveMember(player.Conn)
+			player.Group = ""
+			speak.SendSuccess(player.Conn, "")
+			if isLeader {
+				for _, member := range group.Members {
+					speak.SendEvent(member.Conn, "GROUP", "DISBANDED")
+					member.Group = ""
+				}
+				h.Broadcast <- models.Message{
+					Scope:    models.ScopeGroup,
+					Filter:   groupID,
+					Category: "GROUP",
+					Content:  "DISBAND " + player.Name,
+				}
+				delete(h.Groups, groupID)
+			} else if All_group == 0 {
+				h.Broadcast <- models.Message{
+					Scope:    models.ScopeGroup,
+					Filter:   groupID,
+					Category: "GROUP",
+					Content:  "LEAVE " + player.Name,
+				}
+				delete(h.Groups, groupID)
+			} else {
+				h.Broadcast <- models.Message{
+					Scope:    models.ScopeGroup,
+					Filter:   groupID,
+					Category: "GROUP",
+					Content:  "LEAVE " + player.Name,
+				}
+			}
+		}
+	default:
+		speak.SendErr(player.Conn, speak.ErrInvalidArgument)
+		return
+	}
 }

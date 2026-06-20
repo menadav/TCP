@@ -39,7 +39,7 @@ fmt-fix:
 	gofmt -w src cmd
 
 vet:
-	$(GO) vet ./...
+	@$(GO) vet ./...
 
 clean:
 	$(GO) clean

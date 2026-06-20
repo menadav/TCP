@@ -9,7 +9,7 @@ import (
 	"net"
 )
 
-func main(){
+func main() {
 	listen, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		fmt.Println("Error listen", err)
@@ -26,7 +26,7 @@ func main(){
 	fmt.Println("Server ready on the port :")
 	for {
 		conn, err := listen.Accept()
-		if err != nil{
+		if err != nil {
 			fmt.Println("Error Accept", err)
 			continue
 		}
