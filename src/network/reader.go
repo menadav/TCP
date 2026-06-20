@@ -2,11 +2,13 @@ package network
 
 import (
     "answer_protocol/src/models"
+    "answer_protocol/src/speakserver"
     "bufio"
     "fmt"
     "net"
     "os"
     "strings"
+    "time"
 )
 
 type TextProcessor func(string)
@@ -15,12 +17,22 @@ func TextClient(text string) {
     fmt.Println(text)
 }
 
-func StartScanner(scanner *bufio.Scanner, process TextProcessor) {
-    for scanner.Scan() {
+func StartScanner(scanner *bufio.Scanner, process func(string), conn net.Conn) {
+    for {
+        conn.SetReadDeadline(time.Now().Add(3 * time.Minute))
+        if !scanner.Scan() {
+            break
+        }
         process(scanner.Text())
     }
     if err := scanner.Err(); err != nil {
         if strings.Contains(err.Error(), "use of closed network connection") {
+            return
+        }
+        
+        if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+            speak.SendError(conn, 408, "CONNECTION_TIMEOUT")
+            fmt.Println("Timeout de inactividad, close conexión:", conn.RemoteAddr())
             return
         }
         fmt.Println("ERROR scanner:", err)
@@ -42,10 +54,6 @@ func BroadcastMessage(name string, hub *models.Hub) TextProcessor {
 			Content: fmt.Sprintf("EVT GLOBAL CHAT %s %s\n", new_name, msg),
 		}
     }
-}
-
-func ReadServer(scanner *bufio.Scanner, process TextProcessor) {
-    StartScanner(scanner, process)
 }
 
 func ReadLine(conn net.Conn) string {

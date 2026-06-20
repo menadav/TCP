@@ -1,98 +1,98 @@
 items:
   - id: "item_ring"
     name: "The One Ring"
-    description: "A plain golden ring radiating faint malice."
+    description: "Un anillo dorado simple que irradia una leve malicia."
     obtainable: false
     hand: false
     dmg: 0
 
   - id: "item_mithril"
     name: "Mithril Shirt"
-    description: "Feather-light mail harder than dragon scales. Locked behind glass."
+    description: "Cota ligera como una pluma, más dura que las escamas de un dragón. Encerrada tras un cristal."
     obtainable: false
     hand: false
     dmg: 0
 
   - id: "item_ale"
     name: "Prancing Pony Ale"
-    description: "A frothy dark pint that restores a traveler's spirit."
+    description: "Una pinta oscura y espumosa que restaura el espíritu de un viajero."
     obtainable: true
     hand: false
     dmg: 0
 
   - id: "item_athelas"
     name: "Athelas Leaves"
-    description: "Kingsfoil. A healing herb that cures severe wounds."
+    description: "Hoja de rey. Una hierba curativa que sana heridas graves."
     obtainable: true
     hand: false
     dmg: 0
 
   - id: "item_lembas"
     name: "Lembas Bread"
-    description: "Elven waybread. One bite fills the stomach of a grown man."
+    description: "Pan de viaje élfico. Un bocado llena el estómago de un hombre adulto."
     obtainable: true
     hand: false
     dmg: 0
 
   - id: "item_phial"
     name: "Phial of Galadriel"
-    description: "A crystal vial holding the light of Eärendil's star."
+    description: "Un frasco de cristal que contiene la luz de la estrella de Eärendil."
     obtainable: true
     hand: false
     dmg: 0
 
   - id: "item_palantir"
     name: "Palantír Shard"
-    description: "A cracked seeing-stone fragment, still swirling with dark visions."
+    description: "Un fragmento de piedra vidente agrietado, que aún remolina visiones oscuras."
     obtainable: true
     hand: false
     dmg: 0
 
   - id: "item_horn_gondor"
     name: "Horn of Gondor"
-    description: "Boromir's great horn. Its call carries for leagues."
+    description: "El gran cuerno de Boromir. Su llamada se escucha a leguas."
     obtainable: true
     hand: false
     dmg: 0
 
   - id: "item_sword_wood"
     name: "Wooden Training Sword"
-    description: "A roughhewn practice blade. Better than bare hands."
+    description: "Una espada de práctica toscamente labrada. Mejor que las manos desnudas."
     obtainable: true
     hand: true
     dmg: 10
 
   - id: "item_dagger_shire"
     name: "Hobbit Dagger"
-    description: "A short leaf-shaped blade. Light and quick."
+    description: "Una hoja corta en forma de hoja. Ligera y rápida."
     obtainable: true
     hand: true
     dmg: 14
 
   - id: "item_sword_silver"
     name: "Ranger's Blade"
-    description: "A weathered longsword of the Rangers of the North."
+    description: "Una espada larga desgastada de los Montaraces del Norte."
     obtainable: true
     hand: true
     dmg: 20
 
   - id: "item_morgul_blade"
     name: "Morgul Blade"
-    description: "A Nazgûl knife, cold to the touch and cursed."
+    description: "Un cuchillo de Nazgûl, frío al tacto y maldito."
     obtainable: true
     hand: true
     dmg: 25
 
   - id: "item_sting"
     name: "Sting"
-    description: "Bilbo's Elvish blade. Glows blue when orcs are near."
+    description: "La espada élfica de Bilbo. Brilla en azul cuando los orcos están cerca."
     obtainable: true
     hand: true
     dmg: 38
 
   - id: "item_anduril"
     name: "Andúril – Flame of the West"
-    description: "Narsil reforged. Blazes with runes of power against the darkness."
+    description: "Narsil reforjada. Arde con runas de poder contra la oscuridad."
     obtainable: true
     hand: true
     dmg: 55
@@ -100,29 +100,29 @@ items:
 npcs:
   - id: "npc_frodo"
     name: "Frodo Baggins"
-    description: "A weary hobbit bearing a heavy burden around his neck."
+    description: "Un hobbit cansado que lleva una pesada carga alrededor de su cuello."
     dialogue:
-      - "The Ring must reach Mount Doom. Will you help me carry it?"
-      - "[QUEST] Llevar el Anillo al Monte del Destino. Quest ID: quest_destroy_ring — Accept? (yes/no)"
+      - "El Anillo debe llegar al Monte del Destino. ¿Me ayudarás a llevarlo?"
+      - "[QUEST] Llevar el Anillo al Monte del Destino. Quest ID: quest_destroy_ring — ¿Aceptar? (sí/no)"
     hp: 50
     is_hostile: false
     quest_id: "quest_destroy_ring"
 
   - id: "npc_aragorn"
     name: "Aragorn"
-    description: "A stern Ranger of the North gripping a broken blade."
+    description: "Un severo Montaraz del Norte agarrando una espada rota."
     dialogue:
-      - "A companion is wounded. I need Athelas — bring it quickly."
-      - "[QUEST] Conseguir hojas de Athelas. Quest ID: quest_heal_wounded — Accept? (yes/no)"
+      - "Un compañero está herido. Necesito Athelas, tráela rápido."
+      - "[QUEST] Conseguir hojas de Athelas. Quest ID: quest_heal_wounded — ¿Aceptar? (sí/no)"
     hp: 200
     is_hostile: false
     quest_id: "quest_heal_wounded"
 
   - id: "npc_gollum"
     name: "Gollum"
-    description: "A wretched creature crouching behind a jagged rock."
+    description: "Una criatura miserable agachada detrás de una roca escarpada."
     dialogue:
-      - "Thieves! Murderers! We hates them forever!"
+      - "¡Ladrones! ¡Asesinos! ¡Los odiamos para siempre!"
     hp: 60
     attack_dmg: 12
     is_hostile: true
@@ -131,49 +131,49 @@ npcs:
 
   - id: "npc_bilbo"
     name: "Bilbo Baggins"
-    description: "An elderly hobbit scribbling his memoirs at a writing desk."
+    description: "Un anciano hobbit garabateando sus memorias en un escritorio."
     dialogue:
-      - "My old legs won't carry me to Bree. Fetch me a pint from the Prancing Pony?"
-      - "[QUEST] Traer cerveza del Prancing Pony. Quest ID: quest_gather_supplies — Accept? (yes/no)"
+      - "Mis viejas piernas no me llevarán a Bree. ¿Me traes una pinta del Pópony?"
+      - "[QUEST] Traer cerveza del Prancing Pony. Quest ID: quest_gather_supplies — ¿Aceptar? (sí/no)"
     hp: 30
     is_hostile: false
     quest_id: "quest_gather_supplies"
 
   - id: "npc_gandalf"
     name: "Gandalf the Grey"
-    description: "A tall wizard in a grey cloak, leaning on a gnarled staff."
+    description: "Un mago alto con una capa gris, apoyado en un bastón nudoso."
     dialogue:
-      - "Something stirs in Moria's depths. I need a scout brave enough to find out what."
-      - "[QUEST] Explorar las Minas de Moria. Quest ID: quest_scout_moria — Accept? (yes/no)"
+      - "Algo se agita en las profundidades de Moria. Necesito un explorador lo suficientemente valiente como para averiguar qué."
+      - "[QUEST] Explorar las Minas de Moria. Quest ID: quest_scout_moria — ¿Aceptar? (sí/no)"
     hp: 300
     is_hostile: false
     quest_id: "quest_scout_moria"
 
   - id: "npc_legolas"
     name: "Legolas"
-    description: "An Elven archer scanning the pass with pale grey eyes."
+    description: "Un arquero élfico escaneando el paso con pálidos ojos grises."
     dialogue:
-      - "A great warg blocks the pass ahead. I cannot leave my post — but you can end it."
-      - "[QUEST] Matar al Warg de Cirith Ungol. Quest ID: quest_kill_warg — Accept? (yes/no)"
+      - "Un gran huargo bloquea el paso más adelante. No puedo dejar mi puesto, pero tú puedes acabar con él."
+      - "[QUEST] Matar al Warg de Cirith Ungol. Quest ID: quest_kill_warg — ¿Aceptar? (sí/no)"
     hp: 250
     is_hostile: false
     quest_id: "quest_kill_warg"
 
   - id: "npc_treebeard"
     name: "Treebeard"
-    description: "An ancient Ent, slow and deliberate, older than the hills."
+    description: "Un antiguo Ent, lento y deliberado, más viejo que las colinas."
     dialogue:
-      - "Hrum... Dol Guldur stirs again. I am too slow — venture there and report back."
-      - "[QUEST] Explorar Cirith Ungol. Quest ID: quest_explore_dol_guldur — Accept? (yes/no)"
+      - "Hrum... Dol Guldur se agita de nuevo. Soy demasiado lento: aventúrate allí e infórmame."
+      - "[QUEST] Explorar Cirith Ungol. Quest ID: quest_explore_dol_guldur — ¿Aceptar? (sí/no)"
     hp: 800
     is_hostile: false
     quest_id: "quest_explore_dol_guldur"
 
   - id: "npc_warg"
     name: "Warg of Cirith Ungol"
-    description: "A massive black wolf with glowing amber eyes. It snarls as you approach."
+    description: "Un enorme lobo negro con ojos de color ámbar brillante. Gruñe mientras te acercas."
     dialogue:
-      - "*The warg snaps its jaws and charges!*"
+      - "¡*El huargo chasquea las mandíbulas y carga!*"
     hp: 120
     attack_dmg: 22
     is_hostile: true
@@ -182,9 +182,9 @@ npcs:
 
   - id: "npc_balrog"
     name: "Durin's Bane (Balrog)"
-    description: "A demon of shadow and flame. Its whip cracks like thunder."
+    description: "Un demonio de sombra y llama. Su látigo chasquea como un trueno."
     dialogue:
-      - "YOU SHALL NOT PASS!"
+      - "¡NO PUEDES PASAR!"
     hp: 500
     attack_dmg: 60
     is_hostile: true
@@ -194,7 +194,7 @@ npcs:
 rooms:
   - id: "start"
     name: "The Shire — Bag End"
-    description: "Rolling green hills and cozy hobbit-holes. Pipe-weed drifts on the warm air. Paths lead North, East, and South."
+    description: "Colinas verdes y ondulantes y acogedores agujeros hobbit. La hierba de pipa flota en el aire cálido. Los caminos conducen al Norte, Este y Sur."
     exist:
       NORTH: "buckland"
       EAST: "green_dragon"
@@ -208,7 +208,7 @@ rooms:
 
   - id: "buckland"
     name: "Buckland — Bucklebury Ferry"
-    description: "A misty river hamlet at the Shire's edge. A creaking ferry sways at the dock."
+    description: "Una aldea fluvial brumosa en el borde de la Comarca. Un ferry crujiente se balancea en el muelle."
     exist:
       SOUTH: "start"
     items:
@@ -218,7 +218,7 @@ rooms:
 
   - id: "green_dragon"
     name: "The Green Dragon Inn"
-    description: "The cosiest tavern in the Shire. Fiddles play and mugs are never empty."
+    description: "La taberna más acogedora de la Comarca. Los violines suenan y las jarras nunca están vacías."
     exist:
       WEST: "start"
     items:
@@ -228,7 +228,7 @@ rooms:
 
   - id: "bywater_road"
     name: "Bywater Road"
-    description: "A muddy cart-track winding south toward the wider world. Milestone stones line the verge."
+    description: "Una pista de carros embarrada que serpentea hacia el sur hacia el mundo en general. Las piedras de hito bordean el arcén."
     exist:
       NORTH: "start"
       SOUTH: "bree"
@@ -238,7 +238,7 @@ rooms:
 
   - id: "bree"
     name: "Bree — The Prancing Pony Inn"
-    description: "A noisy tavern where travelers huddle by fireplaces. A hooded stranger sits alone in the corner."
+    description: "Una taberna ruidosa donde los viajeros se acurrucan junto a las chimeneas. Un extraño encapuchado se sienta solo en la esquina."
     exist:
       NORTH: "bywater_road"
       WEST: "weathertop"
@@ -252,7 +252,7 @@ rooms:
 
   - id: "weathertop"
     name: "Weathertop — Amon Sûl"
-    description: "Crumbling ruins atop a barren hill. A biting wind howls through fractured stones."
+    description: "Ruinas en ruinas en la cima de una colina estéril. Un viento mordaz aullaba a través de piedras fracturadas."
     exist:
       EAST: "bree"
     items:
@@ -263,7 +263,7 @@ rooms:
 
   - id: "lothlorien"
     name: "Lothlórien — The Golden Wood"
-    description: "A luminescent forest of silver light and golden leaves. Time moves differently here."
+    description: "Un bosque luminiscente de luz plateada y hojas doradas. El tiempo se mueve diferente aquí."
     exist:
       WEST: "bree"
     items:
@@ -274,7 +274,7 @@ rooms:
 
   - id: "rivendell"
     name: "Rivendell — The Last Homely House"
-    description: "An Elven sanctuary in a steep valley, echoing with distant waterfalls."
+    description: "Un santuario élfico en un valle empinado, que resuena con cascadas distantes."
     exist:
       NORTH: "bree"
       SOUTH: "moria"
@@ -286,7 +286,7 @@ rooms:
 
   - id: "moria"
     name: "The Mines of Moria — Khazad-dûm"
-    description: "A vast cavernous city beneath the mountains. The drumming in the deep grows louder."
+    description: "Una vasta ciudad cavernosa bajo las montañas. El tamborileo en las profundidades se hace más fuerte."
     exist:
       NORTH: "rivendell"
       SOUTH: "cirith_ungol"
@@ -298,7 +298,7 @@ rooms:
 
   - id: "cirith_ungol"
     name: "Cirith Ungol — Bridge of Khazad-dûm"
-    description: "A narrow bridge over a bottomless abyss. Ancient runes glow on the stone arch. This is where the road ends."
+    description: "Un puente estrecho sobre un abismo sin fondo. Runas antiguas brillan en el arco de piedra. Aquí es donde termina el camino."
     exist:
       NORTH: "moria"
     items: []

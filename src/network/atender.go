@@ -43,5 +43,5 @@ func ClientAtender(conn net.Conn, hub *models.Hub) {
     processFunction := func(line string) {
 		parse.ParseCommandCli(line, player, hub)
 	}
-    ReadServer(scanner, processFunction)
+    StartScanner(scanner, processFunction, conn)
 }

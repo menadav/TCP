@@ -15,6 +15,6 @@ func main(){
 	}
 	defer conn.Close()
 	scanner := bufio.NewScanner(conn)
-	go network.ReadServer(scanner, network.TextClient)
+	go network.StartScanner(scanner, network.TextClient, conn)
 	network.WriteFromStdin(conn)
 }

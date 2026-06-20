@@ -105,28 +105,41 @@ func parseGroup(partsGroup []string, player *models.Player, h *models.Hub){
         }
         groupID := player.Group
         if group, exist := h.Groups[groupID]; exist {
+            isLeader := group.Leader == player
             All_group := group.RemoveMember(player.Conn)
             player.Group = ""
             speak.SendSuccess(player.Conn, "")
-            if All_group == 0 || group.Leader == player {
+            if isLeader {
+                for _, member := range group.Members { 
+                    speak.SendError(member.Conn, 400, "GROUP_DISBANDED") 
+                    member.Group = ""
+                }
                 h.Broadcast <- models.Message{
-					Scope:    models.ScopeGroup,
-					Filter:   groupID,
-					Category: "GROUP",
-					Content:  "LEAVE " + player.Name,
-				}
+                    Scope:    models.ScopeGroup,
+                    Filter:   groupID,
+                    Category: "GROUP",
+                    Content:  "DISBAND " + player.Name,
+                }
+                delete(h.Groups, groupID)
+            } else if All_group == 0 {
+                h.Broadcast <- models.Message{
+                    Scope:    models.ScopeGroup,
+                    Filter:   groupID,
+                    Category: "GROUP",
+                    Content:  "LEAVE " + player.Name,
+                }
                 delete(h.Groups, groupID)
             } else {
                 h.Broadcast <- models.Message{
-					Scope:    models.ScopeGroup,
-					Filter:   groupID,
-					Category: "GROUP",
-					Content:  "LEAVE " + player.Name,
-				}
-			}
+                    Scope:    models.ScopeGroup,
+                    Filter:   groupID,
+                    Category: "GROUP",
+                    Content:  "LEAVE " + player.Name,
+                }
+            }
         }
-	default:
-		speak.SendError(player.Conn, 400, "Unknown group action. Use CREATE, INVITE, or JOIN")
-		return
-	}
+    default:
+        speak.SendError(player.Conn, 400, "Unknown group action. Use CREATE, INVITE, or JOIN")
+        return
+    }
 }
