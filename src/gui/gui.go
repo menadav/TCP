@@ -1,18 +1,18 @@
 package gui
 
 import (
-	"answer_protocol/src/models"
-	"bufio"
-	"encoding/json"
-	"fmt"
-	"strings"
-	"time"
+    "answer_protocol/src/models"
+    "bufio"
+    "encoding/json"
+    "fmt"
+    "strings"
+    "time"
 
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/widget"
+    "fyne.io/fyne/v2"
+    "fyne.io/fyne/v2/container"
+    "fyne.io/fyne/v2/layout"
+    "fyne.io/fyne/v2/widget"
 )
-
 type GameUI struct {
 	App           fyne.App
 	Window        fyne.Window
@@ -26,24 +26,25 @@ type GameUI struct {
 }
 
 func Start(app fyne.App, player *models.Player) {
-	if player.Room == nil {
-		player.Room = &models.Room{Exist: make(map[string]string)}
-	}
+    if player.Room == nil {
+        player.Room = &models.Room{Exist: make(map[string]string)}
+    }
 
-	ui := &GameUI{
-		App:           app,
-		Window:        app.NewWindow("TAP MUD"),
-		MudConsole:    widget.NewRichTextFromMarkdown("## Welcome to TAP\n"),
-		ChatInput:     widget.NewEntry(),
-		CurrentPlayer: player,
-		History:       "## Welcome to TAP\n",
-		currentMenu:   "exploration",
-	}
-	ui.ChatInput.SetPlaceHolder("Type command or chat...")
-	go ui.listenServer()
-	ui.setupLayout()
-	ui.Window.Resize(fyne.NewSize(900, 600))
-	ui.Window.ShowAndRun()
+    ui := &GameUI{
+        App:           app,
+        Window:        app.NewWindow("TAP MUD"),
+        MudConsole:    widget.NewRichTextFromMarkdown("## Welcome to TAP\n"),
+        ChatInput:     widget.NewEntry(),
+        CurrentPlayer: player,
+        History:       "## Welcome to TAP\n",
+        currentMenu:   "exploration",
+    }
+    ui.ChatInput.SetPlaceHolder("Type command or chat...")
+    ui.MudConsole.Wrapping = fyne.TextWrapWord
+    go ui.listenServer()
+    ui.setupLayout()
+    ui.Window.Resize(fyne.NewSize(900, 600))
+    ui.Window.ShowAndRun()
 }
 
 func (ui *GameUI) listenServer() {
@@ -102,43 +103,48 @@ func (ui *GameUI) sendCommand(cmd string) {
 }
 
 func (ui *GameUI) setupLayout() {
-	ui.ActionsPanel = container.NewVBox()
-	ui.showExplorationMenu()
+    ui.ActionsPanel = container.NewVBox()
+    ui.showExplorationMenu()
 
-	chatPrefixes := container.NewHBox(
-		widget.NewButton("Global", func() { ui.ChatInput.SetText("CHAT GLOBAL ") }),
-		widget.NewButton("Room", func() { ui.ChatInput.SetText("CHAT ROOM ") }),
-		widget.NewButton("Group", func() { ui.ChatInput.SetText("CHAT GROUP ") }),
-	)
+    chatPrefixes := container.NewHBox(
+        widget.NewButton("Global", func() { ui.ChatInput.SetText("CHAT GLOBAL ") }),
+        widget.NewButton("Room", func() { ui.ChatInput.SetText("CHAT ROOM ") }),
+        widget.NewButton("Group", func() { ui.ChatInput.SetText("CHAT GROUP ") }),
+    )
 
-	movePanel := container.NewHBox(container.NewHBox(
-		widget.NewButton("^ N", func() { ui.sendCommand("MOVE NORTH") }),
-		widget.NewButton("< W", func() { ui.sendCommand("MOVE WEST") }),
-		widget.NewButton("> E", func() { ui.sendCommand("MOVE EAST") }),
-		widget.NewButton("v S", func() { ui.sendCommand("MOVE SOUTH") }),
-	))
+    movePanel := container.NewGridWithColumns(3,
+        layout.NewSpacer(),
+        widget.NewButton("N", func() { ui.sendCommand("MOVE NORTH") }),
+        layout.NewSpacer(),
+        widget.NewButton("W", func() { ui.sendCommand("MOVE WEST") }),
+        layout.NewSpacer(),
+        widget.NewButton("E", func() { ui.sendCommand("MOVE EAST") }),
+        layout.NewSpacer(),
+        widget.NewButton("S", func() { ui.sendCommand("MOVE SOUTH") }),
+        layout.NewSpacer(),
+    )
 
-	btnSend := widget.NewButton("Send", func() {
-		if ui.ChatInput.Text != "" {
-			ui.sendCommand(ui.ChatInput.Text)
-			ui.ChatInput.SetText("")
-		}
-	})
+    btnSend := widget.NewButton("Send", func() {
+        if ui.ChatInput.Text != "" {
+            ui.sendCommand(ui.ChatInput.Text)
+            ui.ChatInput.SetText("")
+        }
+    })
 
-	bottom := container.NewVBox(
-		chatPrefixes,
-		widget.NewSeparator(),
-		movePanel,
-		widget.NewSeparator(),
-		container.NewBorder(nil, nil, nil, btnSend, ui.ChatInput),
-	)
+    bottom := container.NewVBox(
+        chatPrefixes,
+        widget.NewSeparator(),
+        movePanel,
+        widget.NewSeparator(),
+        container.NewBorder(nil, nil, nil, btnSend, ui.ChatInput),
+    )
+    
+    consoleScroll := container.NewScroll(ui.MudConsole)
+    consoleScroll.SetMinSize(fyne.NewSize(400, 400))
 
-	consoleScroll := container.NewScroll(ui.MudConsole)
-	consoleScroll.SetMinSize(fyne.NewSize(400, 400))
-
-	main := container.NewHSplit(consoleScroll, ui.ActionsPanel)
-	main.SetOffset(0.7)
-	ui.Window.SetContent(container.NewBorder(nil, bottom, nil, nil, main))
+    main := container.NewHSplit(consoleScroll, ui.ActionsPanel)
+    main.SetOffset(0.7)    
+    ui.Window.SetContent(container.NewBorder(nil, bottom, nil, nil, main))
 }
 
 func (ui *GameUI) showCombatMenu(targetNpc string) {

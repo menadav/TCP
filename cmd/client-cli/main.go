@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"os"
 )
 
 func main() {
@@ -15,6 +16,9 @@ func main() {
 	}
 	defer conn.Close()
 	scanner := bufio.NewScanner(conn)
-	go network.StartScanner(scanner, network.TextClient, conn)
+	go func() {
+		network.StartScanner(scanner, network.TextClient, conn)
+		os.Exit(0)
+	}()
 	network.WriteFromStdin(conn)
 }
