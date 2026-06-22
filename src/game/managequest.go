@@ -25,6 +25,12 @@ func ManageQuest(player *models.Player, h *models.Hub, action string, questID st
 			return
 		}
 		speak.SendSuccess(player.Conn, "quest_accepted="+quest.ID)
+	case "LEAVE":
+		if e := player.LeaveQuest(quest); e != nil {
+            speak.SendErr(player.Conn, *e)
+            return
+        }
+        speak.SendSuccess(player.Conn, "quest_left="+quest.ID)
 	case "COMPLETE":
 		rewardItem := h.World.Items[quest.Reward]
 		if e := player.CompleteQuest(quest, rewardItem); e != nil {
