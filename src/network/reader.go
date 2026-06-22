@@ -1,6 +1,7 @@
 package network
 
 import (
+	"answer_protocol/src/logger"
 	"answer_protocol/src/models"
 	"answer_protocol/src/speakserver"
 	"bufio"
@@ -32,10 +33,10 @@ func StartScanner(scanner *bufio.Scanner, process func(string), conn net.Conn) {
 
 		if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 			speak.SendErr(conn, speak.ErrTimeout)
-			fmt.Println("Timeout de inactividad, close conexión:", conn.RemoteAddr())
+			logger.Warn("connection timeout", "addr", logger.Addr(conn))
 			return
 		}
-		fmt.Println("ERROR scanner:", err)
+		logger.Error("scanner error", "addr", logger.Addr(conn), "err", err)
 	}
 }
 

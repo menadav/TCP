@@ -1,6 +1,7 @@
 package game
 
 import (
+	"answer_protocol/src/logger"
 	"answer_protocol/src/models"
 	"answer_protocol/src/speakserver"
 	"strings"
@@ -18,6 +19,7 @@ func DropItem(player *models.Player, query string, hub *models.Hub) {
 			room.Items = append(room.Items, item)
 			room.Mu.Unlock()
 			speak.SendSuccess(player.Conn, "dropped="+item.ID)
+			logger.Info("world change", "event", "item_drop", "player", player.Name, "item", item.ID, "room", room.Id)
 			hub.Broadcast <- models.Message{Scope: models.ScopeRoom, Filter: room.Id, Category: "ROOM", Content: "ITEMS_CHANGED"}
 			return
 		}

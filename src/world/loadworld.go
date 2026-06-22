@@ -2,8 +2,8 @@ package world
 
 import (
 	"answer_protocol/src/constructor"
+	"answer_protocol/src/logger"
 	"answer_protocol/src/models"
-	"fmt"
 	"gopkg.in/yaml.v3"
 	"os"
 )
@@ -13,12 +13,12 @@ func LoadWorld(path string) (*models.World, error) {
 
 	bytes, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Println("Error read path", err)
+		logger.Error("world read failed", "path", path, "err", err)
 		return nil, err
 	}
 	err = yaml.Unmarshal(bytes, &yamlData)
 	if err != nil {
-		fmt.Println("Error read yaml", err)
+		logger.Error("world parse failed", "path", path, "err", err)
 		return nil, err
 	}
 	world := constructor.NewWorld()
@@ -42,14 +42,14 @@ func LoadWorld(path string) (*models.World, error) {
 			if itemReal, existe := world.Items[itemID]; existe {
 				room.Items = append(room.Items, itemReal)
 			} else {
-				fmt.Printf("[WARNING] '%s' the item not exist '%s' \n", itemID, room.Id)
+				logger.Warn("world load: item not found", "item", itemID, "room", room.Id)
 			}
 		}
 		for _, npcID := range room.YamlNpcs {
 			if npcReal, existe := world.Npcs[npcID]; existe {
 				room.Npcs = append(room.Npcs, npcReal)
 			} else {
-				fmt.Printf("[WARNING] The NPC '%s' require the room '%s' not exist the global NPCs.\n", npcID, room.Id)
+				logger.Warn("world load: npc not found", "npc", npcID, "room", room.Id)
 			}
 		}
 	}
