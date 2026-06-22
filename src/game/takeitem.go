@@ -1,6 +1,7 @@
 package game
 
 import (
+	"answer_protocol/src/logger"
 	"answer_protocol/src/models"
 	"answer_protocol/src/speakserver"
 	"strings"
@@ -28,6 +29,7 @@ func TakeItem(player *models.Player, query string, hub *models.Hub) {
 			player.HandleItemCollection(item.ID, hub.World.Quest)
 			actualRoom.Mu.Unlock()
 			speak.SendSuccess(player.Conn, "taken="+item.ID)
+			logger.Info("world change", "event", "item_take", "player", player.Name, "item", item.ID, "room", actualRoom.Id)
 			hub.Broadcast <- models.Message{Scope: models.ScopeRoom, Filter: actualRoom.Id, Category: "ROOM", Content: "ITEMS_CHANGED"}
 			return
 		}

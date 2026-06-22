@@ -2,35 +2,35 @@ package main
 
 import (
 	"answer_protocol/src/constructor"
+	"answer_protocol/src/logger"
 	"answer_protocol/src/network"
 	"answer_protocol/src/speakserver"
 	"answer_protocol/src/world"
-	"fmt"
 	"net"
 )
 
 func main() {
 	listen, err := net.Listen("tcp", ":8080")
 	if err != nil {
-		fmt.Println("Error listen", err)
+		logger.Error("listen failed", "addr", ":8080", "err", err)
 		return
 	}
 	defer listen.Close()
 	data, err := world.LoadWorld("data.yaml")
 	if err != nil {
-		fmt.Println("Error load world", err)
+		logger.Error("world load failed", "path", "data.yaml", "err", err)
 		return
 	}
 	hub := constructor.NewHub(data)
 	go hub.Run()
-	fmt.Println("Server ready on the port :")
+	logger.Info("server ready", "addr", ":8080")
 	for {
 		conn, err := listen.Accept()
 		if err != nil {
-			fmt.Println("Error Accept", err)
+			logger.Error("accept failed", "err", err)
 			continue
 		}
-		fmt.Println("Client connected from:", conn.RemoteAddr())
+		logger.Info("connection open", "addr", logger.Addr(conn))
 		go network.ClientAtender(conn, hub)
 		speak.SendSuccess(conn, "hello proto=1")
 	}
