@@ -253,13 +253,44 @@ All exits are bidirectional. Directions shown on each link:
 
 ## Server Logging
 
-The server currently logs key lifecycle events (server start, client connect /
-disconnect with remote address, inactivity timeouts and respawn/world errors) to
-standard output.
+The server emits **structured JSON logs** via the `src/logger` package, a thin
+wrapper around the standard library `log/slog`. Every entry includes a precise
+RFC3339 `time`, a `level` (`INFO` / `WARN` / `ERROR`) and a `msg`, plus
+event-specific fields. Logs are written to **stdout**, so they can be piped to a
+file or a log collector (e.g. `./bin/tap-server | jq`).
 
-> Status: structured logging (JSON format, INFO/WARN/ERROR levels, full
-> command/response logging and abuse-pattern detection) is planned and not yet
-> complete.
+### Log format
+
+```json
+{"time":"2026-06-22T18:04:11.512Z","level":"INFO","msg":"command received","player":"alice","addr":"127.0.0.1:53024","cmd":"TAKE","args":"item_lembas"}
+```
+
+### Event types
+
+| `msg` | Level | Key fields | Trigger |
+|-------|-------|------------|---------|
+| `server ready` | INFO | `addr` | Server starts listening |
+| `connection open` | INFO | `addr` | TCP connection accepted |
+| `client registered` | INFO | `name`, `addr` | Successful authentication |
+| `auth failed` | WARN | `addr` | Authentication aborted/failed |
+| `connection close` | INFO | `name`, `addr` | Client disconnects |
+| `command received` | INFO | `player`, `addr`, `cmd`, `args` | Any command from a client |
+| `response sent` | INFO | `addr`, `kind` (`OK`/`EVT`), `data` | Server reply / event |
+| `error response` | WARN | `addr`, `code`, `sym` | Error code sent to a client |
+| `world change` | INFO | `event` (`item_take`, `item_drop`, `npc_defeated`, `player_respawn`), `player`, ... | World state mutation |
+| `quest progress` | INFO | `event` (`quest_accept`/`quest_complete`), `player`, `quest` | Quest lifecycle |
+| `abuse detected` | WARN | `name`, `addr`, `reason`, `count` | Command flooding |
+| `listen failed` / `world load failed` / `scanner error` / `respawn failed` | ERROR | `err`, ... | Internal failures |
+
+### Monitoring abuse
+
+Command flooding is detected per connection: more than `floodThreshold` (20)
+commands within a 10-second window emits an `abuse detected` WARN with the
+offending player, address and count. Filter the stream with
+`./bin/tap-server | jq 'select(.level=="WARN")'` to watch for abuse and errors.
+
+> Output destination: stdout. Client-side connection errors in the CLI/GUI
+> binaries remain on `fmt.Println` as they are user-facing, not server logs.
 
 ## Group Contributions
 

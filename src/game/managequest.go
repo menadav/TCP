@@ -1,6 +1,7 @@
 package game
 
 import (
+	"answer_protocol/src/logger"
 	"answer_protocol/src/models"
 	"answer_protocol/src/speakserver"
 	"strings"
@@ -25,6 +26,7 @@ func ManageQuest(player *models.Player, h *models.Hub, action string, questID st
 			return
 		}
 		speak.SendSuccess(player.Conn, "quest_accepted="+quest.ID)
+		logger.Info("quest progress", "event", "quest_accept", "player", player.Name, "quest", quest.ID)
 	case "COMPLETE":
 		rewardItem := h.World.Items[quest.Reward]
 		if e := player.CompleteQuest(quest, rewardItem); e != nil {
@@ -32,6 +34,7 @@ func ManageQuest(player *models.Player, h *models.Hub, action string, questID st
 			return
 		}
 		speak.SendSuccess(player.Conn, "quest_completed="+quest.ID+" reward="+quest.Reward)
+		logger.Info("quest progress", "event", "quest_complete", "player", player.Name, "quest", quest.ID, "reward", quest.Reward)
 		player.MsgChan <- models.Message{
 			Category: "QUEST",
 			Content:  "COMPLETED " + quest.ID,

@@ -1,6 +1,7 @@
 package speak
 
 import (
+	"answer_protocol/src/logger"
 	"fmt"
 	"net"
 )
@@ -60,4 +61,5 @@ var (
 
 func SendErr(conn net.Conn, e ErrCode) {
 	fmt.Fprintf(conn, "ERR %d %s\n", e.Code, e.Sym)
+	logger.Warn("error response", "addr", logger.Addr(conn), "code", e.Code, "sym", e.Sym)
 }

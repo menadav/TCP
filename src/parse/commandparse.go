@@ -2,10 +2,10 @@ package parse
 
 import (
 	"answer_protocol/src/game"
+	"answer_protocol/src/logger"
 	"answer_protocol/src/models"
 	"answer_protocol/src/speakserver"
 	"encoding/json"
-	"fmt"
 	"strings"
 )
 
@@ -20,6 +20,7 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 	if len(parts) > 1 {
 		argument = parts[1]
 	}
+	logger.Info("command received", "player", player.Name, "addr", logger.Addr(player.Conn), "cmd", command, "args", argument)
 	if player.GetStatus() == "combat" {
 		switch command {
 		case "USE_ITEM", "DEFEND", "FLEE", "STATUS", "REQ":
@@ -154,7 +155,7 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 			player.Room.Mu.RLock()
 			for i, npc := range player.Room.Npcs {
 				if npc == nil {
-					fmt.Printf("   [%d] El puntero del NPC es NIL\n", i)
+					logger.Warn("nil npc pointer", "index", i, "room", player.Room.Id)
 					continue
 				}
 			}
