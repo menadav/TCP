@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func DropItem(player *models.Player, query string) {
+func DropItem(player *models.Player, query string, hub *models.Hub) {
 	for i, item := range player.Inventory {
 		if strings.EqualFold(item.Name, query) || item.ID == query {
 			player.Inventory = append(player.Inventory[:i], player.Inventory[i+1:]...)
@@ -18,6 +18,7 @@ func DropItem(player *models.Player, query string) {
 			room.Items = append(room.Items, item)
 			room.Mu.Unlock()
 			speak.SendSuccess(player.Conn, "dropped="+item.ID)
+			hub.Broadcast <- models.Message{Scope: models.ScopeRoom, Filter: room.Id, Category: "ROOM", Content: "ITEMS_CHANGED"}
 			return
 		}
 	}
