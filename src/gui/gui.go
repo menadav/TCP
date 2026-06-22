@@ -83,6 +83,10 @@ func (ui *GameUI) listenServer() {
 			continue
 		}
 		msg, _ := reader.ReadString('\n')
+		if strings.Contains(msg, "ITEMS_CHANGED") {
+			fmt.Fprintf(ui.CurrentPlayer.Conn, "REQ\n")
+			continue
+		}
 		ui.History += "\n\n" + strings.TrimSpace(string(opcode)+msg)
 		ui.MudConsole.ParseMarkdown(ui.History)
 		ui.MudConsole.Refresh()

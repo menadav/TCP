@@ -117,7 +117,7 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 			speak.SendErr(player.Conn, speak.ErrMissingArgument)
 			return
 		}
-		game.DropItem(player, argument)
+		game.DropItem(player, argument, h)
 	case "TALK":
 		if argument == "" {
 			speak.SendErr(player.Conn, speak.ErrMissingArgument)
