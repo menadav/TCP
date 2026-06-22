@@ -42,16 +42,16 @@ type Item struct {
 }
 
 type Room struct {
-	Mu          sync.RWMutex       `json:"-" yaml:"-"`
-	Id          string             `json:"id" yaml:"id"`
-	Name        string             `json:"name" yaml:"name"`
-	Description string             `json:"description" yaml:"description"`
-	Exist       map[string]string  `json:"exist" yaml:"exist"`
-	Players     map[string]*Player `json:"players" yaml:"-"`
-	Items       []*Item            `json:"items" yaml:"-"`
-	Npcs        []*Npc             `json:"npcs" yaml:"-"`
-	YamlItems   []string           `json:"-" yaml:"items"`
-	YamlNpcs    []string           `json:"-" yaml:"npcs"`
+	Mu          sync.RWMutex       	`json:"-" yaml:"-"`
+	Id          string             	`json:"id" yaml:"id"`
+	Name        string             	`json:"name" yaml:"name"`
+	Description string             	`json:"description" yaml:"description"`
+	Exist		map[string]string	`json:"exist" yaml:"exist"`
+	Players     map[string]*Player	`json:"players" yaml:"-"`
+	Items       []*Item           	`json:"items" yaml:"-"`
+	Npcs        []*Npc             	`json:"npcs" yaml:"-"`
+	YamlItems   []string           	`json:"-" yaml:"items"`
+	YamlNpcs    []string           	`json:"-" yaml:"npcs"`
 }
 
 type YamlData struct {

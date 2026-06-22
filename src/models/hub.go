@@ -71,6 +71,19 @@ func (h *Hub) GetOnlinePlayersNames() []string {
 	return playerNames
 }
 
+func (h *Hub) GetPlayersInRoom(roomID string) []string {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	
+	playersInRoom := make([]string, 0)
+	for _, player := range h.Clients {
+		if player != nil && player.Room.Id == roomID {
+			playersInRoom = append(playersInRoom, player.GetName())
+		}
+	}
+	return playersInRoom
+}
+
 func (h *Hub) NotifyRoomLeave(player *Player, roomID string) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
