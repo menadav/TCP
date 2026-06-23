@@ -1,57 +1,49 @@
-/*package logger
-
-import (
-	"log/slog"
-	"net"
-	"os"
-)
-
-var log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
-
-func Info(msg string, args ...any) {
-	log.Info(msg, args...)
-}
-
-func Warn(msg string, args ...any) {
-	log.Warn(msg, args...)
-}
-
-func Error(msg string, args ...any) {
-	log.Error(msg, args...)
-}
-
-func Addr(conn net.Conn) string {
-	if conn == nil {
-		return ""
-	}
-	if a := conn.RemoteAddr(); a != nil {
-		return a.String()
-	}
-	return ""
-}*/
-
 package logger
 
 import (
+	"encoding/json"
 	"log"
 	"net"
 	"os"
+	"time"
 )
 
-var infoLog = log.New(os.Stdout, "[INFO] ", log.LstdFlags)
-var warnLog = log.New(os.Stdout, "[WARN] ", log.LstdFlags)
-var errorLog = log.New(os.Stdout, "[ERROR] ", log.LstdFlags)
+var out = log.New(os.Stdout, "", 0)
+
+func emit(level, msg string, args ...any) {
+	entry := map[string]any{
+		"time":  time.Now().UTC().Format(time.RFC3339Nano),
+		"level": level,
+		"msg":   msg,
+	}
+	for i := 0; i+1 < len(args); i += 2 {
+		key, ok := args[i].(string)
+		if !ok {
+			continue
+		}
+		entry[key] = args[i+1]
+	}
+	if len(args)%2 == 1 {
+		entry["arg"] = args[len(args)-1]
+	}
+	b, err := json.Marshal(entry)
+	if err != nil {
+		out.Printf(`{"level":%q,"msg":%q,"log_error":%q}`, level, msg, err.Error())
+		return
+	}
+	out.Println(string(b))
+}
 
 func Info(msg string, args ...any) {
-	infoLog.Println(msg)
+	emit("INFO", msg, args...)
 }
 
 func Warn(msg string, args ...any) {
-	warnLog.Println(msg)
+	emit("WARN", msg, args...)
 }
 
 func Error(msg string, args ...any) {
-	errorLog.Println(msg)
+	emit("ERROR", msg, args...)
 }
 
 func Addr(conn net.Conn) string {
@@ -62,4 +54,4 @@ func Addr(conn net.Conn) string {
 		return a.String()
 	}
 	return ""
-} 
+}
