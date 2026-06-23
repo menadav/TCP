@@ -139,6 +139,7 @@ The first digit groups the error by domain:
 | 204 | `CONNECTION_TIMEOUT` | The connection timed out (auth or inactivity) |
 | 300 | `NO_EXIT` | There is no exit in that direction |
 | 301 | `NOT_IN_ROOM` | The player is not currently in a room |
+| 302 | `PATH_BLOCKED` | An NPC blocks that exit (e.g. Snorlax on the bridge) |
 | 400 | `ITEM_NOT_FOUND` | No matching item in the room/inventory |
 | 401 | `ITEM_NOT_OBTAINABLE` | The item cannot be taken |
 | 402 | `HANDS_FULL` | The player already holds a weapon |
@@ -172,14 +173,15 @@ Turn-based, player-initiated combat:
   NPC and puts the player in the `combat` state.
 - While in combat the allowed commands are `USE_ITEM` (attack), `DEFEND`, `FLEE`
   and `STATUS`; any other command is rejected with `604`.
-- **Damage formula:** player damage = `weapon damage + rand(0..4)`. Unarmed base
-  damage is `5`; picking up a weapon item (`hand: true`) sets the player's damage
-  to that item's `dmg`. Dropping the weapon resets to unarmed.
-- **Counter-attack:** after a non-lethal hit the NPC deals its `attack_dmg`.
-  `DEFEND` halves the incoming damage that turn.
+- **Damage formula:** combat is fully deterministic (no random component). A hit
+  deals exactly the player's current damage: `5` unarmed, or the equipped weapon's
+  `dmg` (taking the Thick Bone sets it to `34`). Dropping the weapon resets to the
+  unarmed base of `5`.
+- **Counter-attack:** after a non-lethal hit the NPC deals its `attack_dmg`
+  (Snorlax hits `49`). `DEFEND` halves the incoming damage that turn.
 - **FLEE** leaves combat with no damage.
-- **Respawn:** a player reaching 0 HP respawns at the safe start room with half of
-  max HP.
+- **Respawn:** a player reaching 0 HP respawns at the safe start room with reduced
+  health (`Max_HP - 1`, i.e. 99), satisfying the spec's "reduced health" rule.
 - Combat progress is pushed to the player as `EVT COMBAT ...` and victories are
   broadcast to the room.
 
@@ -199,57 +201,72 @@ Quests are defined in `data.yaml` and tracked per player:
 
 ## World Design
 
-The world (`data.yaml`) has **10 interconnected rooms**, a set of items (weapons
-and quest items, some not obtainable), quest-giver NPCs (Frodo, Aragorn, Bilbo,
-Gandalf, Legolas, Treebeard) and hostile NPCs (Gollum, the Warg, the Balrog).
+The full player workflow — from spawning in the first room to completing the
+main quest — is shown below (diagram source: [`assets/mermaid.txt`](assets/mermaid.txt)):
+
+![Player workflow diagram](assets/world_workflow.svg)
+
+The world (`data.yaml`) has **8 interconnected rooms** themed around the Kanto
+region. It contains **4 items**, **3 NPCs** (two quest-givers and one enemy) and
+**2 quests**. The four southern rooms form a closed loop (a full circuit) and the
+northern path is an optional branch.
+
+**Core mechanic — a blocked path:** Snorlax sits on the Silence Bridge and blocks
+its `NORTH` exit while it is alive, so any `MOVE NORTH` there is rejected with
+`PATH_BLOCKED` (302). The player must take the **Thick Bone** (a weapon) from the
+Graveyard and defeat Snorlax in combat; once its HP reaches 0 the block clears
+automatically and the way north opens. This is data-driven: an NPC declares the
+direction it guards via a `blocks_dir` field.
 
 All exits are bidirectional. Directions shown on each link:
 
 ```
-                       +--------------+
-                       |   buckland   |
-                       | (Bucklebury) |
-                       +------+-------+
-                          N   |   S
-                       +------+-------+   E    +-----------------+
-                       |    START     |------->|  green_dragon   |
-                       |  (Bag End)   |<-------| (Green Dragon)  |
-                       +------+-------+   W    +-----------------+
-                          S   |   N
-                       +------+-------+
-                       | bywater_road |
-                       +------+-------+
-                          S   |   N
-  +------------+   W     +----+-----+    E    +---------------+
-  | weathertop |<--------|   bree   |-------->|   lothlorien  |
-  | (Amon Sul) |-------->|  (Pony)  |<--------| (Golden Wood) |
-  +------------+   E     +----+-----+    W    +---------------+
-                          S   |   N
-                       +------+-------+
-                       |  rivendell   |
-                       +------+-------+
-                          S   |   N
-                       +------+-------+
-                       |    moria     |
-                       +------+-------+
-                          S   |   N
-                       +------+-------+
-                       | cirith_ungol |
-                       +--------------+
+                  +------------------+
+                  |  lavender_town   |
+                  | (Lavender Town)  |
+                  +--------+---------+
+                       N   |   S
+ +---------------+   W     +--------+---------+
+ |     tower     |<--------|    crossroad     |
+ | (Pkmn Tower)  |-------->|(Lavender Crossrd)|
+ +---------------+   E     +--------+---------+
+                       S   |   N
+                  +--------+---------+
+                  | silence_bridge   |   <-- Snorlax blocks NORTH
+                  | (Silence Bridge) |
+                  +--------+---------+
+                       N   |   S
+                  +--------+---------+   E    +----------------+
+                  |    route_11      |------->|  guard_house   |
+                  |   (Route 11)     |<-------| (Guard House)  |
+                  +--------+---------+   W    +-------+--------+
+                       S   |   N                  N   |   S
+                  +--------+---------+   E    +-------+--------+
+                  |     start        |------->|   graveyard    |
+                  | (Vermilion City) |<-------|  (Graveyard)   |
+                  +------------------+   W    +----------------+
 ```
 
-| Room | NPCs | Notable items |
-|------|------|---------------|
-| start (Bag End) | Frodo, Bilbo | Wooden Training Sword, Lembas Bread |
-| buckland | — | Ale, Hobbit Dagger |
-| green_dragon | — | Ale, Horn of Gondor |
-| bywater_road | — | Athelas Leaves |
-| bree (Prancing Pony) | Aragorn | Ale, Ranger's Blade |
-| weathertop | Gandalf | Athelas, Morgul Blade |
-| lothlorien | Treebeard | Phial of Galadriel, Sting |
-| rivendell | Legolas | Lembas, Palantír Shard |
-| moria | Gollum (hostile) | Mithril Shirt, Andúril |
-| cirith_ungol | Warg, Balrog (hostile) | — |
+| Room | NPCs | Items |
+|------|------|-------|
+| start (Vermilion City) | Club President (quest-giver) | — |
+| graveyard (Graveyard) | — | Thick Bone (weapon) |
+| route_11 (Route 11) | — | — |
+| guard_house (Guard House) | — | — |
+| silence_bridge (Silence Bridge) | Snorlax (hostile, blocks NORTH) | — |
+| crossroad (Lavender Crossroad) | — | Leftovers |
+| tower (Pokemon Tower) | — | Cubone's Skull |
+| lavender_town (Lavender Town) | Mr. Fuji (quest-giver) | — |
+
+**Items:** Thick Bone (weapon, `dmg 34`), Leftovers, Cubone's Skull, and the Poke
+Flute (granted as the main quest reward, not placed in a room).
+
+**Quests:**
+
+- `quest_blocked_path` (deliver) — defeat Snorlax and bring the Leftovers (found
+  beyond the bridge) to the Club President; reward: the Poke Flute.
+- `quest_tower_mystery` (collect) — retrieve the Cubone's Skull from the Pokemon
+  Tower for Mr. Fuji.
 
 ## Server Logging
 
@@ -262,7 +279,7 @@ file or a log collector (e.g. `./bin/tap-server | jq`).
 ### Log format
 
 ```json
-{"time":"2026-06-22T18:04:11.512Z","level":"INFO","msg":"command received","player":"alice","addr":"127.0.0.1:53024","cmd":"TAKE","args":"item_lembas"}
+{"time":"2026-06-22T18:04:11.512Z","level":"INFO","msg":"command received","player":"alice","addr":"127.0.0.1:53024","cmd":"TAKE","args":"item_thick_bone"}
 ```
 
 ### Event types
@@ -293,8 +310,6 @@ offending player, address and count. Filter the stream with
 > binaries remain on `fmt.Println` as they are user-facing, not server logs.
 
 ## Group Contributions
-
-> TODO (team): replace with each member's real responsibilities.
 
 | Member | Responsibilities |
 |--------|------------------|

@@ -4,7 +4,6 @@ import (
 	"answer_protocol/src/models"
 	"answer_protocol/src/speakserver"
 	"fmt"
-	"math/rand"
 )
 
 func Attack(player *models.Player, h *models.Hub) {
@@ -26,7 +25,7 @@ func Attack(player *models.Player, h *models.Hub) {
 		speak.SendErr(player.Conn, speak.ErrTargetGone)
 		return
 	}
-	playerDmg := player.Dmg + rand.Intn(5)
+	playerDmg := player.Dmg
 	npc.CurrentHP -= playerDmg
 	if npc.CurrentHP <= 0 {
 		player.HandleNpcDeath(npc.ID, h.World.Quest)

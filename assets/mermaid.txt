@@ -1,0 +1,49 @@
+%% Player flow: from start to finishing the game
+%% Main quest: quest_blocked_path (defeat Snorlax and deliver the Leftovers to the Club President)
+%% Core mechanic: Snorlax blocks the bridge (blocks_dir NORTH while CurrentHP > 0)
+%% Deterministic combat (no randomness): player with the Thick Bone hits 34, Snorlax hits 49
+
+flowchart TD
+    Start([Start: spawn in Vermilion City]) --> Talk1[TALK npc_club_president]
+    Talk1 --> Accept1[QUEST ACCEPT quest_blocked_path<br/>goal: defeat Snorlax and deliver item_leftovers]
+
+    Accept1 --> GoBone[MOVE EAST to the Graveyard]
+    GoBone --> TakeBone[TAKE item_thick_bone<br/>weapon dmg 34 -> player.Dmg = 34]
+
+    TakeBone --> GoBridge[MOVE NORTH Guard House -> WEST Route 11 -> NORTH Silence Bridge]
+    GoBridge --> Blocked{Snorlax blocks the NORTH exit<br/>active while CurrentHP greater than 0}
+
+    Blocked -->|MOVE NORTH| Deny[ERROR 302 PATH_BLOCKED:<br/>Snorlax blocks the way]
+    Deny --> Blocked
+
+    Blocked -->|ATTACK npc_snorlax| StartC[Enter combat<br/>player.Status = combat<br/>Snorlax HP 100, attack 49]
+    StartC --> CombatLoop{Combat loop}
+
+    CombatLoop -->|USE_ITEM| Hit[Hit with the Thick Bone<br/>snorlax.CurrentHP -= 34]
+    CombatLoop -->|DEFEND| Def[No damage to Snorlax<br/>you take 49 / 2 = 24]
+    CombatLoop -->|FLEE| Flee[Leave combat]
+    Flee --> Blocked
+
+    Hit --> SnorDead{Snorlax HP less than or equal to 0?}
+    SnorDead -->|yes| Defeated[Snorlax DEFEATED<br/>no counterattack on death<br/>NORTH unblocked]
+    SnorDead -->|no| Counter[Counterattack: you take 49]
+    Def --> PlayerDead
+    Counter --> PlayerDead{Player HP less than or equal to 0?}
+    PlayerDead -->|yes| Respawn[respawnPlayer: HP = 100<br/>back to Vermilion City]
+    Respawn --> Blocked
+    PlayerDead -->|no| CombatLoop
+
+    Defeated --> GoCross[MOVE NORTH to Lavender Crossroad]
+    GoCross --> TakeLeft[TAKE item_leftovers]
+
+    TakeLeft --> Optional{Do the Tower quest?}
+    Optional -->|yes| GoTower[MOVE WEST to Pokemon Tower]
+    GoTower --> TakeSkull[TAKE item_cubone_skull]
+    TakeSkull --> GoLav[MOVE EAST then NORTH to Lavender Town]
+    GoLav --> Fuji[TALK npc_mr_fuji<br/>QUEST ACCEPT and COMPLETE quest_tower_mystery<br/>reward: the Cubone's mother can rest]
+    Fuji --> Return[Head SOUTH back to Vermilion City]
+    Optional -->|no| Return
+
+    Return --> Talk2[TALK npc_club_president]
+    Talk2 --> Complete[QUEST COMPLETE quest_blocked_path<br/>deliver item_leftovers, receive the Poke Flute]
+    Complete --> End([Game completed])

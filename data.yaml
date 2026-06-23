@@ -1,357 +1,155 @@
 items:
-  - id: "item_ring"
-    name: "The One Ring"
-    description: "Un anillo dorado simple que irradia una leve malicia."
-    obtainable: false
-    hand: false
-    dmg: 0
-
-  - id: "item_mithril"
-    name: "Mithril Shirt"
-    description: "Cota ligera como una pluma, más dura que las escamas de un dragón. Encerrada tras un cristal."
-    obtainable: false
-    hand: false
-    dmg: 0
-
-  - id: "item_ale"
-    name: "Prancing Pony Ale"
-    description: "Una pinta oscura y espumosa que restaura el espíritu de un viajero."
-    obtainable: true
-    hand: false
-    dmg: 0
-
-  - id: "item_athelas"
-    name: "Athelas Leaves"
-    description: "Hoja de rey. Una hierba curativa que sana heridas graves."
-    obtainable: true
-    hand: false
-    dmg: 0
-
-  - id: "item_lembas"
-    name: "Lembas Bread"
-    description: "Pan de viaje élfico. Un bocado llena el estómago de un hombre adulto."
-    obtainable: true
-    hand: false
-    dmg: 0
-
-  - id: "item_phial"
-    name: "Phial of Galadriel"
-    description: "Un frasco de cristal que contiene la luz de la estrella de Eärendil."
-    obtainable: true
-    hand: false
-    dmg: 0
-
-  - id: "item_palantir"
-    name: "Palantír Shard"
-    description: "Un fragmento de piedra vidente agrietado, que aún remolina visiones oscuras."
-    obtainable: true
-    hand: false
-    dmg: 0
-
-  - id: "item_horn_gondor"
-    name: "Horn of Gondor"
-    description: "El gran cuerno de Boromir. Su llamada se escucha a leguas."
-    obtainable: true
-    hand: false
-    dmg: 0
-
-  - id: "item_sword_wood"
-    name: "Wooden Training Sword"
-    description: "Una espada de práctica toscamente labrada. Mejor que las manos desnudas."
+  - id: "item_poke_flute"
+    name: "Poke Flute"
+    description: "A beautifully crafted flute with a hauntingly soothing melody. A treasured keepsake among Pokemon trainers."
     obtainable: true
     hand: true
-    dmg: 10
+    dmg: 0
 
-  - id: "item_dagger_shire"
-    name: "Hobbit Dagger"
-    description: "Una hoja corta en forma de hoja. Ligera y rápida."
+  - id: "item_cubone_skull"
+    name: "Cubone's Skull"
+    description: "A small, weathered skull belonging to a Cubone. It feels cold to the touch."
     obtainable: true
-    hand: true
-    dmg: 14
+    hand: false
+    dmg: 0
 
-  - id: "item_sword_silver"
-    name: "Ranger's Blade"
-    description: "Una espada larga desgastada de los Montaraces del Norte."
+  - id: "item_thick_bone"
+    name: "Thick Bone"
+    description: "A bone from a dead pokemon, it could be used as a weapon..."
     obtainable: true
-    hand: true
-    dmg: 20
+    hand: false
+    dmg: 34
 
-  - id: "item_morgul_blade"
-    name: "Morgul Blade"
-    description: "Un cuchillo de Nazgûl, frío al tacto y maldito."
+  - id: "item_leftovers"
+    name: "Leftovers"
+    description: "An apple core that restores health little by little. Left behind by a massive Pokemon."
     obtainable: true
-    hand: true
-    dmg: 25
-
-  - id: "item_sting"
-    name: "Sting"
-    description: "La espada élfica de Bilbo. Brilla en azul cuando los orcos están cerca."
-    obtainable: true
-    hand: true
-    dmg: 38
-
-  - id: "item_anduril"
-    name: "Andúril – Flame of the West"
-    description: "Narsil reforjada. Arde con runas de poder contra la oscuridad."
-    obtainable: true
-    hand: true
-    dmg: 55
+    hand: false
+    dmg: 0
 
 npcs:
-  - id: "npc_frodo"
-    name: "Frodo Baggins"
-    description: "Un hobbit cansado que lleva una pesada carga alrededor de su cuello."
+  - id: "npc_club_president"
+    name: "Club President"
+    description: "An older man wearing a neat suit. He loves talking about his favorite Pokemon."
     dialogue:
-      - "El Anillo debe llegar al Monte del Destino. ¿Me ayudarás a llevarlo?"
-      - "[QUEST] Llevar el Anillo al Monte del Destino. Quest ID: quest_destroy_ring — ¿Aceptar? (sí/no)"
-    hp: 50
+      - "A giant Snorlax is blocking the bridge and won't budge. Could you drive it off and bring me the Leftovers it's guarding on the far side?"
+      - "[QUEST] Defeat the Snorlax and bring back the Leftovers. Quest ID: quest_blocked_path — Accept? (yes/no)"
+    hp: 100
     is_hostile: false
-    quest_id: "quest_destroy_ring"
+    quest_id: "quest_blocked_path"
 
-  - id: "npc_aragorn"
-    name: "Aragorn"
-    description: "Un severo Montaraz del Norte agarrando una espada rota."
+  - id: "npc_snorlax"
+    name: "Snorlax"
+    description: "A massive, rotund Pokemon planted squarely across the bridge. It glares at anyone who comes near and flatly refuses to move."
     dialogue:
-      - "Un compañero está herido. Necesito Athelas, tráela rápido."
-      - "[QUEST] Conseguir hojas de Athelas. Quest ID: quest_heal_wounded — ¿Aceptar? (sí/no)"
-    hp: 200
-    is_hostile: false
-    quest_id: "quest_heal_wounded"
-
-  - id: "npc_gollum"
-    name: "Gollum"
-    description: "Una criatura miserable agachada detrás de una roca escarpada."
-    dialogue:
-      - "¡Ladrones! ¡Asesinos! ¡Los odiamos para siempre!"
-    hp: 60
-    attack_dmg: 12
+      - "*Snorlax snorts and blocks the way. It won't let you pass!*"
+    hp: 100
+    attack_dmg: 49
     is_hostile: true
     quest_id: ""
     combat: false
+    blocks_dir: "NORTH"
 
-  - id: "npc_bilbo"
-    name: "Bilbo Baggins"
-    description: "Un anciano hobbit garabateando sus memorias en un escritorio."
+  - id: "npc_mr_fuji"
+    name: "Mr. Fuji"
+    description: "A kind old man who cares for orphaned Pokemon."
     dialogue:
-      - "Mis viejas piernas no me llevarán a Bree. ¿Me traes una pinta del Pópony?"
-      - "[QUEST] Traer cerveza del Prancing Pony. Quest ID: quest_gather_supplies — ¿Aceptar? (sí/no)"
-    hp: 30
+      - "There are restless spirits in the Tower. Please, find the Cubone's Skull so its mother can rest."
+      - "[QUEST] Find the Cubone's Skull in the Tower. Quest ID: quest_tower_mystery — Accept? (yes/no)"
+    hp: 100
     is_hostile: false
-    quest_id: "quest_gather_supplies"
-
-  - id: "npc_gandalf"
-    name: "Gandalf the Grey"
-    description: "Un mago alto con una capa gris, apoyado en un bastón nudoso."
-    dialogue:
-      - "Algo se agita en las profundidades de Moria. Necesito un explorador lo suficientemente valiente como para averiguar qué."
-      - "[QUEST] Explorar las Minas de Moria. Quest ID: quest_scout_moria — ¿Aceptar? (sí/no)"
-    hp: 300
-    is_hostile: false
-    quest_id: "quest_scout_moria"
-
-  - id: "npc_legolas"
-    name: "Legolas"
-    description: "Un arquero élfico escaneando el paso con pálidos ojos grises."
-    dialogue:
-      - "Un gran huargo bloquea el paso más adelante. No puedo dejar mi puesto, pero tú puedes acabar con él."
-      - "[QUEST] Matar al Warg de Cirith Ungol. Quest ID: quest_kill_warg — ¿Aceptar? (sí/no)"
-    hp: 250
-    is_hostile: false
-    quest_id: "quest_kill_warg"
-
-  - id: "npc_treebeard"
-    name: "Treebeard"
-    description: "Un antiguo Ent, lento y deliberado, más viejo que las colinas."
-    dialogue:
-      - "Hrum... Dol Guldur se agita de nuevo. Soy demasiado lento: aventúrate allí e infórmame."
-      - "[QUEST] Explorar Cirith Ungol. Quest ID: quest_explore_dol_guldur — ¿Aceptar? (sí/no)"
-    hp: 800
-    is_hostile: false
-    quest_id: "quest_explore_dol_guldur"
-
-  - id: "npc_warg"
-    name: "Warg of Cirith Ungol"
-    description: "Un enorme lobo negro con ojos de color ámbar brillante. Gruñe mientras te acercas."
-    dialogue:
-      - "¡*El huargo chasquea las mandíbulas y carga!*"
-    hp: 120
-    attack_dmg: 22
-    is_hostile: true
-    quest_id: ""
-    combat: true
-
-  - id: "npc_balrog"
-    name: "Durin's Bane (Balrog)"
-    description: "Un demonio de sombra y llama. Su látigo chasquea como un trueno."
-    dialogue:
-      - "¡NO PUEDES PASAR!"
-    hp: 500
-    attack_dmg: 60
-    is_hostile: true
-    quest_id: ""
-    combat: true
+    quest_id: "quest_tower_mystery"
 
 rooms:
   - id: "start"
-    name: "The Shire — Bag End"
-    description: "Colinas verdes y ondulantes y acogedores agujeros hobbit. La hierba de pipa flota en el aire cálido. Los caminos conducen al Norte, Este y Sur."
+    name: "Vermilion City"
+    description: "A port city facing the ocean. The salty sea breeze fills the air. Paths lead north and east."
     exist:
-      NORTH: "buckland"
-      EAST: "green_dragon"
-      SOUTH: "bywater_road"
-    items:
-      - "item_sword_wood"
-      - "item_lembas"
-    npcs:
-      - "npc_frodo"
-      - "npc_bilbo"
-
-  - id: "buckland"
-    name: "Buckland — Bucklebury Ferry"
-    description: "Una aldea fluvial brumosa en el borde de la Comarca. Un ferry crujiente se balancea en el muelle."
-    exist:
-      SOUTH: "start"
-    items:
-      - "item_ale"
-      - "item_dagger_shire"
-    npcs: []
-
-  - id: "green_dragon"
-    name: "The Green Dragon Inn"
-    description: "La taberna más acogedora de la Comarca. Los violines suenan y las jarras nunca están vacías."
-    exist:
-      WEST: "start"
-    items:
-      - "item_ale"
-      - "item_horn_gondor"
-    npcs: []
-
-  - id: "bywater_road"
-    name: "Bywater Road"
-    description: "Una pista de carros embarrada que serpentea hacia el sur hacia el mundo en general. Las piedras de hito bordean el arcén."
-    exist:
-      NORTH: "start"
-      SOUTH: "bree"
-    items:
-      - "item_athelas"
-    npcs: []
-
-  - id: "bree"
-    name: "Bree — The Prancing Pony Inn"
-    description: "Una taberna ruidosa donde los viajeros se acurrucan junto a las chimeneas. Un extraño encapuchado se sienta solo en la esquina."
-    exist:
-      NORTH: "bywater_road"
-      WEST: "weathertop"
-      EAST: "lothlorien"
-      SOUTH: "rivendell"
-    items:
-      - "item_ale"
-      - "item_sword_silver"
-    npcs:
-      - "npc_aragorn"
-
-  - id: "weathertop"
-    name: "Weathertop — Amon Sûl"
-    description: "Ruinas en ruinas en la cima de una colina estéril. Un viento mordaz aullaba a través de piedras fracturadas."
-    exist:
-      EAST: "bree"
-    items:
-      - "item_athelas"
-      - "item_morgul_blade"
-    npcs:
-      - "npc_gandalf"
-
-  - id: "lothlorien"
-    name: "Lothlórien — The Golden Wood"
-    description: "Un bosque luminiscente de luz plateada y hojas doradas. El tiempo se mueve diferente aquí."
-    exist:
-      WEST: "bree"
-    items:
-      - "item_phial"
-      - "item_sting"
-    npcs:
-      - "npc_treebeard"
-
-  - id: "rivendell"
-    name: "Rivendell — The Last Homely House"
-    description: "Un santuario élfico en un valle empinado, que resuena con cascadas distantes."
-    exist:
-      NORTH: "bree"
-      SOUTH: "moria"
-    items:
-      - "item_lembas"
-      - "item_palantir"
-    npcs:
-      - "npc_legolas"
-
-  - id: "moria"
-    name: "The Mines of Moria — Khazad-dûm"
-    description: "Una vasta ciudad cavernosa bajo las montañas. El tamborileo en las profundidades se hace más fuerte."
-    exist:
-      NORTH: "rivendell"
-      SOUTH: "cirith_ungol"
-    items:
-      - "item_mithril"
-      - "item_anduril"
-    npcs:
-      - "npc_gollum"
-
-  - id: "cirith_ungol"
-    name: "Cirith Ungol — Bridge of Khazad-dûm"
-    description: "Un puente estrecho sobre un abismo sin fondo. Runas antiguas brillan en el arco de piedra. Aquí es donde termina el camino."
-    exist:
-      NORTH: "moria"
+      NORTH: "route_11"
+      EAST: "graveyard"
     items: []
     npcs:
-      - "npc_warg"
-      - "npc_balrog"
+      - "npc_club_president"
+
+  - id: "graveyard"
+    name: "Graveyard"
+    description: "An old, overgrown Pokemon graveyard. Weathered headstones lean among the weeds, and a heavy, bleached bone lies forgotten on the ground. A path leads north towards a small guard building."
+    exist:
+      WEST: "start"
+      NORTH: "guard_house"
+    items:
+      - "item_thick_bone"
+    npcs: []
+
+  - id: "route_11"
+    name: "Route 11"
+    description: "A grassy route favored by many trainers, just outside the city. A large bridge is visible to the north, and a small guard building lies to the east."
+    exist:
+      SOUTH: "start"
+      EAST: "guard_house"
+      NORTH: "silence_bridge"
+    items: []
+    npcs: []
+
+  - id: "guard_house"
+    name: "Guard House"
+    description: "A small checkpoint building connecting the routes. The guard desk is currently empty."
+    exist:
+      SOUTH: "graveyard"
+      WEST: "route_11"
+    items: []
+    npcs: []
+
+  - id: "silence_bridge"
+    name: "Silence Bridge"
+    description: "A long wooden bridge suspended over the water. A massive shape blocks the way."
+    exist:
+      SOUTH: "route_11"
+      NORTH: "crossroad"
+    items: []
+    npcs:
+      - "npc_snorlax"
+
+  - id: "crossroad"
+    name: "Lavender Crossroad"
+    description: "A gloomy intersection where the atmosphere suddenly turns cold. A tall tower looms to the west."
+    exist:
+      SOUTH: "silence_bridge"
+      WEST: "tower"
+      NORTH: "lavender_town"
+    items:
+      - "item_leftovers"
+    npcs: []
+
+  - id: "tower"
+    name: "Pokemon Tower"
+    description: "A solemn, multi-tiered graveyard for departed Pokemon. A thick fog hangs in the air."
+    exist:
+      EAST: "crossroad"
+    items:
+      - "item_cubone_skull"
+    npcs: []
+
+  - id: "lavender_town"
+    name: "Lavender Town"
+    description: "A small, quiet town shrouded in a purple mist. It feels both peaceful and eerie."
+    exist:
+      SOUTH: "crossroad"
+    items: []
+    npcs:
+      - "npc_mr_fuji"
 
 quest:
-  - id: "quest_destroy_ring"
-    description: "Ayuda a Frodo a llevar el Anillo Único hasta el Monte del Destino."
+  - id: "quest_blocked_path"
+    description: "Defeat the Snorlax blocking the bridge and bring the Leftovers to the Club President."
     type: "deliver"
-    required_item: "item_ring"
-    reward: "item_mithril"
+    required_item: "item_leftovers"
+    reward: "item_poke_flute"
     status: "available"
 
-  - id: "quest_heal_wounded"
-    description: "Busca hojas de Athelas para curar a un compañero herido de Aragorn."
+  - id: "quest_tower_mystery"
+    description: "Retrieve Cubone's Skull from the Pokemon Tower and bring it to Mr. Fuji."
     type: "collect"
-    required_item: "item_athelas"
-    reward: "item_phial"
-    status: "available"
-
-  - id: "quest_gather_supplies"
-    description: "Consigue una jarra de cerveza en la Comarca para el viejo Bilbo."
-    type: "collect"
-    required_item: "item_ale"
-    reward: "item_lembas"
-    status: "available"
-
-  - id: "quest_scout_moria"
-    description: "Gandalf te pide que explores las Minas de Moria."
-    type: "explore"
-    required_room: "moria"
-    reward: "item_palantir"
-    status: "available"
-
-  - id: "quest_explore_dol_guldur"
-    description: "Treebeard necesita que explores Cirith Ungol y regreses con un informe."
-    type: "explore"
-    required_room: "cirith_ungol"
-    reward: "item_anduril"
-    status: "available"
-
-  - id: "quest_kill_warg"
-    description: "Legolas te pide que elimines al Warg de Cirith Ungol para despejar el paso."
-    type: "kill"
-    required_kill: "npc_warg"
-    reward: "item_sting"
-    status: "available"
-
-  - id: "quest_kill_gollum"
-    description: "Elimina a Gollum en las Minas de Moria para asegurar el paso."
-    type: "kill"
-    required_kill: "npc_gollum"
-    reward: "item_athelas"
+    required_item: "item_cubone_skull"
+    reward: ""
     status: "available"

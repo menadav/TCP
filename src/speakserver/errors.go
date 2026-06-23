@@ -25,8 +25,9 @@ var (
 	ErrNameInvalid  = ErrCode{203, "NAME_INVALID"}
 	ErrTimeout      = ErrCode{204, "CONNECTION_TIMEOUT"}
 
-	ErrNoExit    = ErrCode{300, "NO_EXIT"}
-	ErrNotInRoom = ErrCode{301, "NOT_IN_ROOM"}
+	ErrNoExit      = ErrCode{300, "NO_EXIT"}
+	ErrNotInRoom   = ErrCode{301, "NOT_IN_ROOM"}
+	ErrPathBlocked = ErrCode{302, "PATH_BLOCKED"}
 
 	ErrItemNotFound  = ErrCode{400, "ITEM_NOT_FOUND"}
 	ErrNotObtainable = ErrCode{401, "ITEM_NOT_OBTAINABLE"}
