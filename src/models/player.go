@@ -236,7 +236,7 @@ func (p *Player) GetCurrentRoomNpcIDs() []string {
 	return ids
 }
 
-func (p *Player) GetCurrentRoomItemIDs() []string {
+func (p *Player) GetCurrentRoomItems() []ItemView {
 	p.Mu.RLock()
 	defer p.Mu.RUnlock()
 
@@ -247,13 +247,13 @@ func (p *Player) GetCurrentRoomItemIDs() []string {
 	p.Room.Mu.RLock()
 	defer p.Room.Mu.RUnlock()
 
-	var ids []string
+	var items []ItemView
 	for _, item := range p.Room.Items {
 		if item != nil {
-			ids = append(ids, item.ID)
+			items = append(items, ItemView{ID: item.ID, Name: item.Name})
 		}
 	}
-	return ids
+	return items
 }
 
 func (p *Player) GetCurrentRoomNpcIDsTalk() []string {
@@ -282,18 +282,18 @@ func (p *Player) GetCurrentRoomNpcIDsHostil() []string {
 	return ids
 }
 
-func (p *Player) GetInventoryItemIDs() []string {
+func (p *Player) GetInventoryItems() []ItemView {
 	p.Mu.RLock()
 	defer p.Mu.RUnlock()
 
-	ids := make([]string, 0, len(p.Inventory))
+	items := make([]ItemView, 0, len(p.Inventory))
 
 	for _, item := range p.Inventory {
 		if item != nil {
-			ids = append(ids, item.ID)
+			items = append(items, ItemView{ID: item.ID, Name: item.Name})
 		}
 	}
-	return ids
+	return items
 }
 
 func (p *Player) GetPlayerQuestsList() []PlayerQuestResponse {
