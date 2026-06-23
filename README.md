@@ -318,10 +318,45 @@ for abuse and errors.
 
 ## Group Contributions
 
-| Member | Responsibilities |
-|--------|------------------|
-| dmena-li | Server implementation, CLI client |
-| egalindo | GUI client, world design |
+Roughly, **dmena-li built the system from the ground up** and **egalindo focused
+on debugging, testing, tooling and bringing the project into full subject
+compliance**. In detail, based on the git history:
+
+**dmena-li — core implementation (built from scratch)**
+
+- TCP server foundation: the `CONNECT` authentication handshake, the
+  `ClientAtender` connection lifecycle, and the central `Hub` running in a single
+  goroutine with `Register` / `Unregister` / `Broadcast` channels and per-entity
+  `sync.RWMutex` locks.
+- Networking & protocol plumbing: buffered I/O / message framing, the
+  `speakserver` reply format (`OK` / `ERR` / `EVT`), and chat across the
+  Global / Room / Group scopes.
+- World model and loading: the `models` structs (`Player`, `Room`, `Npc`, `Item`,
+  `World`) and reading the static world from YAML.
+- Core gameplay: the command parser and the `MOVE`, `LOOK`, `INVENTORY`,
+  `STATUS`, `TAKE`, `DROP`, `TALK` (with NPC dialogue) commands, the group system
+  (`CREATE` / `JOIN` / `LEAVE` / `INVITE`), the turn-based combat phase and the
+  quest system.
+- First GUI implementation (Fyne) and the initial client wiring; connection
+  time-outs and player-leave handling.
+
+**egalindo — debugging, testing, tooling & subject compliance**
+
+- Build tooling and hygiene: the `Makefile`, `gofmt`/`go vet` lint cleanup, and
+  the single-source error-code catalog (`speakserver/errors.go`) with its
+  documentation.
+- World remake: redesigned the world to meet the mandatory requirements (the
+  Kanto arc — rooms with a loop and branches, items, NPCs, the two quests) and
+  added the path-blocking Snorlax mechanic (`blocks_dir` / `PATH_BLOCKED`).
+- Logging: structured JSON logging, replacing `log/slog` with a hand-rolled
+  `log` + `encoding/json` logger for Go 1.18 compatibility, and logging of NPC
+  interactions and abuse patterns (command flooding + rapid connections).
+- Robustness fixes: world-reference validation on load, non-blocking hub
+  broadcasts, and the `MsgChan` channel-close race fix.
+- GUI V.4 compliance & polish: item display names, separated chat/log views,
+  live player counters, the TALK-opens-combat fix, the D-pad movement layout and
+  the compact theme.
+- README and project documentation.
 
 ## Building and Running
 
