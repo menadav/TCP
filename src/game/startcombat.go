@@ -1,6 +1,7 @@
 package game
 
 import (
+	"answer_protocol/src/logger"
 	"answer_protocol/src/models"
 	"answer_protocol/src/speakserver"
 )
@@ -41,5 +42,6 @@ func StartAttack(player *models.Player, target string, h *models.Hub) bool {
 	player.SetStatus("combat")
 	player.SetCombatNpc(npc.ID)
 	player.SendAsync("COMBAT", "START_COMBAT")
+	logger.Info("world change", "event", "combat_start", "player", player.Name, "npc", npc.ID, "room", room.Id)
 	return true
 }

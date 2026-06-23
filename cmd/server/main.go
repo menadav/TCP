@@ -7,6 +7,12 @@ import (
 	"answer_protocol/src/speakserver"
 	"answer_protocol/src/world"
 	"net"
+	"time"
+)
+
+const (
+	rapidConnThreshold = 5
+	rapidConnWindow    = 10 * time.Second
 )
 
 func main() {
@@ -24,13 +30,29 @@ func main() {
 	hub := constructor.NewHub(data)
 	go hub.Run()
 	logger.Info("server ready", "addr", ":8080")
+	connSeen := make(map[string][]time.Time)
 	for {
 		conn, err := listen.Accept()
 		if err != nil {
 			logger.Error("accept failed", "err", err)
 			continue
 		}
-		logger.Info("connection open", "addr", logger.Addr(conn))
+		addr := logger.Addr(conn)
+		logger.Info("connection open", "addr", addr)
+		if host, _, e := net.SplitHostPort(addr); e == nil {
+			now := time.Now()
+			recent := connSeen[host][:0]
+			for _, t := range connSeen[host] {
+				if now.Sub(t) <= rapidConnWindow {
+					recent = append(recent, t)
+				}
+			}
+			recent = append(recent, now)
+			connSeen[host] = recent
+			if len(recent) > rapidConnThreshold {
+				logger.Warn("abuse detected", "addr", addr, "reason", "rapid_connection", "count", len(recent), "window", "10s")
+			}
+		}
 		go network.ClientAtender(conn, hub)
 		speak.SendSuccess(conn, "hello proto=1")
 	}

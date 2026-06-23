@@ -1,6 +1,7 @@
 package game
 
 import (
+	"answer_protocol/src/logger"
 	"answer_protocol/src/models"
 	"answer_protocol/src/speakserver"
 )
@@ -43,4 +44,5 @@ func TalkNpc(player *models.Player, npcID string) {
 		Category: "NPC",
 		Content:  npc.Name + " " + line,
 	}
+	logger.Info("world change", "event", "npc_talk", "player", player.Name, "npc", npc.ID, "room", actualRoom.Id)
 }

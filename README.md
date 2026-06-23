@@ -270,8 +270,9 @@ Flute (granted as the main quest reward, not placed in a room).
 
 ## Server Logging
 
-The server emits **structured JSON logs** via the `src/logger` package, a thin
-wrapper around the standard library `log/slog`. Every entry includes a precise
+The server emits **structured JSON logs** via the `src/logger` package, built on
+the standard library `log` + `encoding/json` (not `log/slog`, so it builds on
+Go 1.18). Every entry includes a precise
 RFC3339 `time`, a `level` (`INFO` / `WARN` / `ERROR`) and a `msg`, plus
 event-specific fields. Logs are written to **stdout**, so they can be piped to a
 file or a log collector (e.g. `./bin/tap-server | jq`).

@@ -162,16 +162,16 @@ func (p *Player) SetHp(hp int) {
 
 func (p *Player) SendAsync(category string, content string) {
 	if p.MsgChan == nil {
-        return
-    }
+		return
+	}
 	select {
-		case p.MsgChan <- Message{
-			Category: category,
-			Content:  content,
-		}:
-		default:
-			logger.Warn("[BROADCAST] Client buffer full, message dropped. Player: " + p.Id + " (" + p.Name + ") - Category: " + category)
-		}
+	case p.MsgChan <- Message{
+		Category: category,
+		Content:  content,
+	}:
+	default:
+		logger.Warn("[BROADCAST] Client buffer full, message dropped. Player: " + p.Id + " (" + p.Name + ") - Category: " + category)
+	}
 }
 
 func (p *Player) ListenMsg() {
@@ -460,30 +460,29 @@ func (p *Player) CompleteQuest(quest *Quest, rewardItem *Item) *speak.ErrCode {
 	return nil
 }
 
-
 func (p *Player) LeaveQuest(quest *Quest) *speak.ErrCode {
-    p.Mu.Lock()
-    defer p.Mu.Unlock()
+	p.Mu.Lock()
+	defer p.Mu.Unlock()
 
-    pq, ok := p.Quests[quest.ID]
-    if !ok {
-        return &speak.ErrQuestNotActive
-    }
-    if pq.Progress == "Completed" || pq.Status == "completed" {
-        return &speak.ErrQuestAlreadyDone 
-    }
-    if quest.StartItem != "" {
-        idx := -1
-        for i, item := range p.Inventory {
-            if item.ID == quest.StartItem {
-                idx = i
-                break
-            }
-        }
-        if idx != -1 {
-            p.Inventory = append(p.Inventory[:idx], p.Inventory[idx+1:]...)
-        }
-    }
-    delete(p.Quests, quest.ID)
-    return nil
+	pq, ok := p.Quests[quest.ID]
+	if !ok {
+		return &speak.ErrQuestNotActive
+	}
+	if pq.Progress == "Completed" || pq.Status == "completed" {
+		return &speak.ErrQuestAlreadyDone
+	}
+	if quest.StartItem != "" {
+		idx := -1
+		for i, item := range p.Inventory {
+			if item.ID == quest.StartItem {
+				idx = i
+				break
+			}
+		}
+		if idx != -1 {
+			p.Inventory = append(p.Inventory[:idx], p.Inventory[idx+1:]...)
+		}
+	}
+	delete(p.Quests, quest.ID)
+	return nil
 }

@@ -1,6 +1,7 @@
 package game
 
 import (
+	"answer_protocol/src/logger"
 	"answer_protocol/src/models"
 	"answer_protocol/src/speakserver"
 	"fmt"
@@ -39,11 +40,12 @@ func Attack(player *models.Player, h *models.Hub) {
 	player.ApplyDamage(npcDmg)
 	currentRoomPlayerHp := player.GetHp()
 	h.Broadcast <- models.Message{
-        Scope:    models.ScopeRoom,
-        Filter:   player.Room.Id,
-        Category: "COMBAT",
-        Content:  fmt.Sprintf("player=%s dealt=%d received=%d npc_hp=%d player_hp=%d", player.Name, playerDmg, npcDmg, npc.CurrentHP, currentRoomPlayerHp),
-    }
+		Scope:    models.ScopeRoom,
+		Filter:   player.Room.Id,
+		Category: "COMBAT",
+		Content:  fmt.Sprintf("player=%s dealt=%d received=%d npc_hp=%d player_hp=%d", player.Name, playerDmg, npcDmg, npc.CurrentHP, currentRoomPlayerHp),
+	}
+	logger.Info("world change", "event", "combat_round", "player", player.Name, "npc", npc.ID, "room", room.Id, "dealt", playerDmg, "received", npcDmg, "npc_hp", npc.CurrentHP, "player_hp", currentRoomPlayerHp)
 	if currentRoomPlayerHp <= 0 {
 		player.SetStatus("healthy")
 		player.SetCombatNpc("")
@@ -75,11 +77,12 @@ func Defend(player *models.Player, h *models.Hub) {
 	player.ApplyDamage(reducedDmg)
 
 	h.Broadcast <- models.Message{
-        Scope:    models.ScopeRoom,
-        Filter:   player.Room.Id,
-        Category: "COMBAT",
-        Content:  fmt.Sprintf("player=%s defended received=%d npc_hp=%d player_hp=%d", player.Name, reducedDmg, npc.CurrentHP, player.GetHp()),
-    }
+		Scope:    models.ScopeRoom,
+		Filter:   player.Room.Id,
+		Category: "COMBAT",
+		Content:  fmt.Sprintf("player=%s defended received=%d npc_hp=%d player_hp=%d", player.Name, reducedDmg, npc.CurrentHP, player.GetHp()),
+	}
+	logger.Info("world change", "event", "combat_defend", "player", player.Name, "npc", npc.ID, "room", room.Id, "received", reducedDmg, "npc_hp", npc.CurrentHP, "player_hp", player.GetHp())
 	if player.GetHp() <= 0 {
 		player.SetStatus("healthy")
 		player.SetCombatNpc("")
