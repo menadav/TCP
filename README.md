@@ -204,7 +204,7 @@ Quests are defined in `data.yaml` and tracked per player:
 The full player workflow — from spawning in the first room to completing the
 main quest — is shown below (diagram source: [`assets/mermaid.txt`](assets/mermaid.txt)):
 
-![Player workflow diagram](assets/world_workflow.svg)
+![Player workflow diagram](assets/white_world_workflow.svg)
 
 The world (`data.yaml`) has **8 interconnected rooms** themed around the Kanto
 region. It contains **4 items**, **3 NPCs** (two quest-givers and one enemy) and
