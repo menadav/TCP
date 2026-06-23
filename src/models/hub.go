@@ -35,18 +35,19 @@ func (h *Hub) Run() {
 				}
 			}
 			delete(h.Clients, player.Conn)
+			close(player.MsgChan)
 			h.mu.Unlock()
 		case msg := <-h.Broadcast:
 			h.mu.RLock()
 			switch msg.Scope {
 			case ScopeGlobal:
 				for _, player := range h.Clients {
-					player.MsgChan <- msg
+					player.Deliver(msg)
 				}
 			case ScopeRoom:
 				for _, player := range h.Clients {
 					if player.Room.Id == msg.Filter {
-						player.MsgChan <- msg
+						player.Deliver(msg)
 					}
 				}
 			case ScopeGroup:
@@ -100,11 +101,11 @@ func (h *Hub) innerNotifyRoomLeave(player *Player, roomID string) {
 	leaveMsg := "PRESENCE LEAVE " + player.Name
 	for _, p := range h.Clients {
 		if p.Room.Id == roomID && p != player {
-			p.MsgChan <- Message{
+			p.Deliver(Message{
 				Scope:    ScopeRoom,
 				Category: "ROOM",
 				Content:  leaveMsg,
-			}
+			})
 		}
 	}
 }
@@ -113,11 +114,11 @@ func (h *Hub) innerNotifyRoomEnter(player *Player, roomID string) {
 	enterMsg := "PRESENCE ENTER " + player.Name
 	for _, p := range h.Clients {
 		if p.Room.Id == roomID && p != player {
-			p.MsgChan <- Message{
+			p.Deliver(Message{
 				Scope:    ScopeRoom,
 				Category: "ROOM",
 				Content:  enterMsg,
-			}
+			})
 		}
 	}
 }

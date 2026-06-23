@@ -174,6 +174,17 @@ func (p *Player) SendAsync(category string, content string) {
 	}
 }
 
+func (p *Player) Deliver(msg Message) {
+	if p.MsgChan == nil {
+		return
+	}
+	select {
+	case p.MsgChan <- msg:
+	default:
+		logger.Warn("broadcast dropped, client buffer full", "player", p.Name, "category", msg.Category)
+	}
+}
+
 func (p *Player) ListenMsg() {
 	for msg := range p.MsgChan {
 		speak.SendEvent(p.Conn, msg.Category, msg.Content)
