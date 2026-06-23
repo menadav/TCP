@@ -30,6 +30,7 @@ type Npc struct {
 	IsHostile   bool     `json:"is_hostile" yaml:"is_hostile"`
 	QuestID     string   `json:"quest_id" yaml:"quest_id"`
 	Combat      bool     `json:"combat" yaml:"combat"`
+	BlocksDir   string   `json:"blocks_dir" yaml:"blocks_dir"`
 }
 
 type Item struct {

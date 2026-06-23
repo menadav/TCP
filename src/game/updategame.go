@@ -8,7 +8,7 @@ import (
 
 func respawnPlayer(player *models.Player, h *models.Hub) {
 	maxHp := player.Max_HP
-	hp := maxHp / 2
+	hp := maxHp - 1
 
 	player.SetHp(hp)
 	err := h.World.UpdatePlayerRoom(player, "start")
