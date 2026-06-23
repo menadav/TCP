@@ -20,6 +20,9 @@ type ItemView struct {
 }
 
 type WorldStateResponse struct {
+	RoomName     string                `json:"room_name"`
+	RoomDesc     string                `json:"room_desc"`
+	RoomExits    map[string]string     `json:"room_exits"`
 	RoomItems    []ItemView            `json:"room_items"`
 	RoNpcsTalk   []string              `json:"room_npcs_talk"`
 	RoNpcsHostil []string              `json:"room_npcs_hostil"`

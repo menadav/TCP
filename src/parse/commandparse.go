@@ -161,7 +161,11 @@ func ParseCommandCli(line string, player *models.Player, h *models.Hub) {
 			}
 			player.Room.Mu.RUnlock()
 		}
+		roomName, roomDesc, roomExits := player.GetCurrentRoomInfo()
 		state := models.WorldStateResponse{
+			RoomName:     roomName,
+			RoomDesc:     roomDesc,
+			RoomExits:    roomExits,
 			RoomItems:    player.GetCurrentRoomItems(),
 			RoNpcsTalk:   player.GetCurrentRoomNpcIDsTalk(),
 			RoNpcsHostil: player.GetCurrentRoomNpcIDsHostil(),

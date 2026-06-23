@@ -34,6 +34,7 @@ type GameUI struct {
 	Window        fyne.Window
 	MudConsole    *widget.RichText
 	ChatView      *widget.RichText
+	RoomPanel     *widget.RichText
 	CountersLabel *widget.Label
 	ChatInput     *widget.Entry
 	ActionsPanel  *fyne.Container
@@ -56,6 +57,7 @@ func Start(app fyne.App, player *models.Player) {
 		Window:        app.NewWindow("TAP MUD"),
 		MudConsole:    widget.NewRichTextFromMarkdown("## Log\n"),
 		ChatView:      widget.NewRichTextFromMarkdown("## Chat\n"),
+		RoomPanel:     widget.NewRichTextFromMarkdown("### Room\n"),
 		CountersLabel: widget.NewLabel("Players  room: -  |  server: -"),
 		ChatInput:     widget.NewEntry(),
 		CurrentPlayer: player,
@@ -66,6 +68,7 @@ func Start(app fyne.App, player *models.Player) {
 	ui.ChatInput.SetPlaceHolder("Type command or chat...")
 	ui.MudConsole.Wrapping = fyne.TextWrapWord
 	ui.ChatView.Wrapping = fyne.TextWrapWord
+	ui.RoomPanel.Wrapping = fyne.TextWrapWord
 	go ui.listenServer()
 	ui.setupLayout()
 	ui.Window.Resize(fyne.NewSize(820, 470))
@@ -102,6 +105,7 @@ func (ui *GameUI) listenServer() {
 					ui.CurrentPlayer.Room.Exist[id] = "HOSTILE"
 				}
 				ui.CurrentPlayer.Room.Mu.Unlock()
+				ui.updateRoomPanel(state)
 				ui.refreshCurrentMenu()
 
 			}
@@ -119,7 +123,7 @@ func (ui *GameUI) listenServer() {
 				ui.CountersLabel.SetText(fmt.Sprintf("Players  room: %d  |  server: %d", len(who.Room), who.Server))
 				if ui.whoLogPending {
 					ui.whoLogPending = false
-					ui.History += fmt.Sprintf("\n\n**WHO** — room (%d): %s — server total: %d", len(who.Room), strings.Join(who.Room, ", "), who.Server)
+					ui.History += fmt.Sprintf("\n\n**WHO** - room (%d): %s - server total: %d", len(who.Room), strings.Join(who.Room, ", "), who.Server)
 					ui.MudConsole.ParseMarkdown(ui.History)
 					ui.MudConsole.Refresh()
 				}
@@ -144,6 +148,23 @@ func (ui *GameUI) listenServer() {
 func isChatLine(line string) bool {
 	fields := strings.Fields(line)
 	return len(fields) >= 3 && fields[0] == "EVT" && fields[2] == "CHAT"
+}
+
+func (ui *GameUI) updateRoomPanel(state models.WorldStateResponse) {
+	order := []string{"NORTH", "SOUTH", "EAST", "WEST"}
+	var parts []string
+	for _, dir := range order {
+		if target, ok := state.RoomExits[dir]; ok {
+			parts = append(parts, dir+" -> "+target)
+		}
+	}
+	exits := strings.Join(parts, ", ")
+	if exits == "" {
+		exits = "none"
+	}
+	md := fmt.Sprintf("### %s\n%s\n\n**Exits:** %s", state.RoomName, state.RoomDesc, exits)
+	ui.RoomPanel.ParseMarkdown(md)
+	ui.RoomPanel.Refresh()
 }
 
 func (ui *GameUI) sendCommand(cmd string) {
@@ -202,11 +223,16 @@ func (ui *GameUI) setupLayout() {
 	logScroll.SetMinSize(fyne.NewSize(200, 150))
 	chatPanel := container.NewBorder(widget.NewLabelWithStyle("Chat", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}), nil, nil, nil, chatScroll)
 	logPanel := container.NewBorder(widget.NewLabelWithStyle("Log", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}), nil, nil, nil, logScroll)
+	roomScroll := container.NewScroll(ui.RoomPanel)
+	roomScroll.SetMinSize(fyne.NewSize(180, 150))
+	roomPanel := container.NewBorder(widget.NewLabelWithStyle("Room", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}), nil, nil, nil, roomScroll)
 	consoleSplit := container.NewHSplit(chatPanel, logPanel)
 	consoleSplit.SetOffset(0.5)
+	leftSide := container.NewHSplit(roomPanel, consoleSplit)
+	leftSide.SetOffset(0.34)
 
-	main := container.NewHSplit(consoleSplit, ui.ActionsPanel)
-	main.SetOffset(0.7)
+	main := container.NewHSplit(leftSide, ui.ActionsPanel)
+	main.SetOffset(0.72)
 	topBar := container.NewHBox(ui.CountersLabel)
 	ui.Window.SetContent(container.NewBorder(topBar, bottom, nil, nil, main))
 }

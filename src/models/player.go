@@ -256,6 +256,22 @@ func (p *Player) GetCurrentRoomItems() []ItemView {
 	return items
 }
 
+func (p *Player) GetCurrentRoomInfo() (string, string, map[string]string) {
+	p.Mu.RLock()
+	room := p.Room
+	p.Mu.RUnlock()
+	if room == nil {
+		return "", "", map[string]string{}
+	}
+	room.Mu.RLock()
+	defer room.Mu.RUnlock()
+	exits := make(map[string]string, len(room.Exist))
+	for dir, target := range room.Exist {
+		exits[dir] = target
+	}
+	return room.Name, room.Description, exits
+}
+
 func (p *Player) GetCurrentRoomNpcIDsTalk() []string {
 	p.Room.Mu.RLock()
 	defer p.Room.Mu.RUnlock()
