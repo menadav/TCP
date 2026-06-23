@@ -40,7 +40,6 @@ func ClientAtender(conn net.Conn, hub *models.Hub) {
 			}
 			hub.Unregister <- player
 		}
-		close(player.MsgChan)
 		conn.Close()
 		logger.Info("connection close", "name", name_p, "addr", logger.Addr(conn))
 	}()

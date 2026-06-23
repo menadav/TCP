@@ -33,7 +33,7 @@ npcs:
     description: "An older man wearing a neat suit. He loves talking about his favorite Pokemon."
     dialogue:
       - "A giant Snorlax is blocking the bridge and won't budge. Could you drive it off and bring me the Leftovers it's guarding on the far side?"
-      - "[QUEST] Defeat the Snorlax and bring back the Leftovers. Quest ID: quest_blocked_path — Accept? (yes/no)"
+      - "[QUEST] Defeat the Snorlax and bring back the Leftovers - To accept the quest, click on the 'QUEST ACCEPT OPTION'"
     hp: 100
     is_hostile: false
     quest_id: "quest_blocked_path"
@@ -55,7 +55,7 @@ npcs:
     description: "A kind old man who cares for orphaned Pokemon."
     dialogue:
       - "There are restless spirits in the Tower. Please, find the Cubone's Skull so its mother can rest."
-      - "[QUEST] Find the Cubone's Skull in the Tower. Quest ID: quest_tower_mystery — Accept? (yes/no)"
+      - "[QUEST] Find the Cubone's Skull in the Tower - To accept the quest, click on the 'QUEST ACCEPT OPTION'"
     hp: 100
     is_hostile: false
     quest_id: "quest_tower_mystery"

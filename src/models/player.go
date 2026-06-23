@@ -162,16 +162,27 @@ func (p *Player) SetHp(hp int) {
 
 func (p *Player) SendAsync(category string, content string) {
 	if p.MsgChan == nil {
-        return
-    }
+		return
+	}
 	select {
-		case p.MsgChan <- Message{
-			Category: category,
-			Content:  content,
-		}:
-		default:
-			logger.Warn("[BROADCAST] Client buffer full, message dropped. Player: " + p.Id + " (" + p.Name + ") - Category: " + category)
-		}
+	case p.MsgChan <- Message{
+		Category: category,
+		Content:  content,
+	}:
+	default:
+		logger.Warn("[BROADCAST] Client buffer full, message dropped. Player: " + p.Id + " (" + p.Name + ") - Category: " + category)
+	}
+}
+
+func (p *Player) Deliver(msg Message) {
+	if p.MsgChan == nil {
+		return
+	}
+	select {
+	case p.MsgChan <- msg:
+	default:
+		logger.Warn("broadcast dropped, client buffer full", "player", p.Name, "category", msg.Category)
+	}
 }
 
 func (p *Player) ListenMsg() {
@@ -225,7 +236,7 @@ func (p *Player) GetCurrentRoomNpcIDs() []string {
 	return ids
 }
 
-func (p *Player) GetCurrentRoomItemIDs() []string {
+func (p *Player) GetCurrentRoomItems() []ItemView {
 	p.Mu.RLock()
 	defer p.Mu.RUnlock()
 
@@ -236,13 +247,13 @@ func (p *Player) GetCurrentRoomItemIDs() []string {
 	p.Room.Mu.RLock()
 	defer p.Room.Mu.RUnlock()
 
-	var ids []string
+	var items []ItemView
 	for _, item := range p.Room.Items {
 		if item != nil {
-			ids = append(ids, item.ID)
+			items = append(items, ItemView{ID: item.ID, Name: item.Name})
 		}
 	}
-	return ids
+	return items
 }
 
 func (p *Player) GetCurrentRoomNpcIDsTalk() []string {
@@ -271,18 +282,18 @@ func (p *Player) GetCurrentRoomNpcIDsHostil() []string {
 	return ids
 }
 
-func (p *Player) GetInventoryItemIDs() []string {
+func (p *Player) GetInventoryItems() []ItemView {
 	p.Mu.RLock()
 	defer p.Mu.RUnlock()
 
-	ids := make([]string, 0, len(p.Inventory))
+	items := make([]ItemView, 0, len(p.Inventory))
 
 	for _, item := range p.Inventory {
 		if item != nil {
-			ids = append(ids, item.ID)
+			items = append(items, ItemView{ID: item.ID, Name: item.Name})
 		}
 	}
-	return ids
+	return items
 }
 
 func (p *Player) GetPlayerQuestsList() []PlayerQuestResponse {
@@ -460,30 +471,29 @@ func (p *Player) CompleteQuest(quest *Quest, rewardItem *Item) *speak.ErrCode {
 	return nil
 }
 
-
 func (p *Player) LeaveQuest(quest *Quest) *speak.ErrCode {
-    p.Mu.Lock()
-    defer p.Mu.Unlock()
+	p.Mu.Lock()
+	defer p.Mu.Unlock()
 
-    pq, ok := p.Quests[quest.ID]
-    if !ok {
-        return &speak.ErrQuestNotActive
-    }
-    if pq.Progress == "Completed" || pq.Status == "completed" {
-        return &speak.ErrQuestAlreadyDone 
-    }
-    if quest.StartItem != "" {
-        idx := -1
-        for i, item := range p.Inventory {
-            if item.ID == quest.StartItem {
-                idx = i
-                break
-            }
-        }
-        if idx != -1 {
-            p.Inventory = append(p.Inventory[:idx], p.Inventory[idx+1:]...)
-        }
-    }
-    delete(p.Quests, quest.ID)
-    return nil
+	pq, ok := p.Quests[quest.ID]
+	if !ok {
+		return &speak.ErrQuestNotActive
+	}
+	if pq.Progress == "Completed" || pq.Status == "completed" {
+		return &speak.ErrQuestAlreadyDone
+	}
+	if quest.StartItem != "" {
+		idx := -1
+		for i, item := range p.Inventory {
+			if item.ID == quest.StartItem {
+				idx = i
+				break
+			}
+		}
+		if idx != -1 {
+			p.Inventory = append(p.Inventory[:idx], p.Inventory[idx+1:]...)
+		}
+	}
+	delete(p.Quests, quest.ID)
+	return nil
 }

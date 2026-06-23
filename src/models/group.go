@@ -1,7 +1,6 @@
 package models
 
 import (
-	"answer_protocol/src/speakserver"
 	"net"
 	"sync"
 )
@@ -45,6 +44,6 @@ func (g *Group) Broadcast(msg Message) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 	for _, player := range g.Members {
-		speak.SendEvent(player.Conn, msg.Category, msg.Content)
+		player.Deliver(msg)
 	}
 }

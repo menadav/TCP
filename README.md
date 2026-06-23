@@ -101,7 +101,9 @@ The RFC leaves many details to each group; the following are our explicit choice
 - **In-combat attack** is issued with `USE_ITEM` (mapped to the attack action)
   while a player is in the `combat` state; `ATTACK <npc>` is used to *start*
   combat. Additional combat commands `DEFEND` and `FLEE` are our design choice.
-- **`WHO`** replies with `OK players=[...]` (the list of connected players).
+- **`WHO`** replies with `OK who=<json>`, where the JSON is
+  `{"room": [names], "server": N}` — the players in the current room and the
+  total number of players online. The GUI uses it to show live player counters.
 - **`INVENTORY`** replies with the JSON array of the player's items.
 
 ### Error Codes
@@ -204,7 +206,7 @@ Quests are defined in `data.yaml` and tracked per player:
 The full player workflow — from spawning in the first room to completing the
 main quest — is shown below (diagram source: [`assets/mermaid.txt`](assets/mermaid.txt)):
 
-![Player workflow diagram](assets/world_workflow.svg)
+![Player workflow diagram](assets/white_world_workflow.svg)
 
 The world (`data.yaml`) has **8 interconnected rooms** themed around the Kanto
 region. It contains **4 items**, **3 NPCs** (two quest-givers and one enemy) and
@@ -270,8 +272,9 @@ Flute (granted as the main quest reward, not placed in a room).
 
 ## Server Logging
 
-The server emits **structured JSON logs** via the `src/logger` package, a thin
-wrapper around the standard library `log/slog`. Every entry includes a precise
+The server emits **structured JSON logs** via the `src/logger` package, built on
+the standard library `log` + `encoding/json` (not `log/slog`, so it builds on
+Go 1.18). Every entry includes a precise
 RFC3339 `time`, a `level` (`INFO` / `WARN` / `ERROR`) and a `msg`, plus
 event-specific fields. Logs are written to **stdout**, so they can be piped to a
 file or a log collector (e.g. `./bin/tap-server | jq`).
@@ -294,17 +297,21 @@ file or a log collector (e.g. `./bin/tap-server | jq`).
 | `command received` | INFO | `player`, `addr`, `cmd`, `args` | Any command from a client |
 | `response sent` | INFO | `addr`, `kind` (`OK`/`EVT`), `data` | Server reply / event |
 | `error response` | WARN | `addr`, `code`, `sym` | Error code sent to a client |
-| `world change` | INFO | `event` (`item_take`, `item_drop`, `npc_defeated`, `player_respawn`), `player`, ... | World state mutation |
+| `world change` | INFO | `event` (`item_take`, `item_drop`, `npc_talk`, `combat_start`, `combat_round`, `combat_defend`, `npc_defeated`, `player_respawn`), `player`, ... | World state mutation (items, NPC interactions, combat) |
 | `quest progress` | INFO | `event` (`quest_accept`/`quest_complete`), `player`, `quest` | Quest lifecycle |
-| `abuse detected` | WARN | `name`, `addr`, `reason`, `count` | Command flooding |
+| `abuse detected` | WARN | `reason` (`command_flood` / `rapid_connection`), `addr`, `count` (+`name` for floods) | Command flooding or rapid connections from one IP |
 | `listen failed` / `world load failed` / `scanner error` / `respawn failed` | ERROR | `err`, ... | Internal failures |
 
 ### Monitoring abuse
 
-Command flooding is detected per connection: more than `floodThreshold` (20)
-commands within a 10-second window emits an `abuse detected` WARN with the
-offending player, address and count. Filter the stream with
-`./bin/tap-server | jq 'select(.level=="WARN")'` to watch for abuse and errors.
+Two abuse patterns are monitored. **Command flooding** is detected per
+connection: more than `floodThreshold` (20) commands within a 10-second window
+emits an `abuse detected` WARN (`reason=command_flood`) with the offending
+player, address and count. **Rapid connections** are detected per remote IP in
+the accept loop: more than `rapidConnThreshold` (5) connections from the same
+address within a 10-second window emits `abuse detected` (`reason=rapid_connection`).
+Filter the stream with `./bin/tap-server | jq 'select(.level=="WARN")'` to watch
+for abuse and errors.
 
 > Output destination: stdout. Client-side connection errors in the CLI/GUI
 > binaries remain on `fmt.Println` as they are user-facing, not server logs.
