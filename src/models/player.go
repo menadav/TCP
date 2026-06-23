@@ -1,6 +1,7 @@
 package models
 
 import (
+	"answer_protocol/src/logger"
 	"answer_protocol/src/speakserver"
 	"fmt"
 	"net"
@@ -160,12 +161,17 @@ func (p *Player) SetHp(hp int) {
 }
 
 func (p *Player) SendAsync(category string, content string) {
-	if p.MsgChan != nil {
-		p.MsgChan <- Message{
+	if p.MsgChan == nil {
+        return
+    }
+	select {
+		case p.MsgChan <- Message{
 			Category: category,
 			Content:  content,
+		}:
+		default:
+			logger.Warn("[BROADCAST] Client buffer full, message dropped. Player: " + p.Id + " (" + p.Name + ") - Category: " + category)
 		}
-	}
 }
 
 func (p *Player) ListenMsg() {
