@@ -39,7 +39,12 @@ func Attack(player *models.Player, h *models.Hub) {
 	npcDmg := npc.AttackDmg
 	player.ApplyDamage(npcDmg)
 	currentRoomPlayerHp := player.GetHp()
-	player.SendAsync("COMBAT", fmt.Sprintf("dealt=%d received=%d npc_hp=%d player_hp=%d", playerDmg, npcDmg, npc.CurrentHP, currentRoomPlayerHp))
+	h.Broadcast <- models.Message{
+        Scope:    models.ScopeRoom,
+        Filter:   player.Room.Id,
+        Category: "COMBAT",
+        Content:  fmt.Sprintf("player=%s dealt=%d received=%d npc_hp=%d player_hp=%d", player.Name, playerDmg, npcDmg, npc.CurrentHP, currentRoomPlayerHp),
+    }
 	if currentRoomPlayerHp <= 0 {
 		player.SetStatus("healthy")
 		player.SetCombatNpc("")
@@ -70,9 +75,12 @@ func Defend(player *models.Player, h *models.Hub) {
 	reducedDmg := npc.AttackDmg / 2
 	player.ApplyDamage(reducedDmg)
 
-	speak.SendEvent(player.Conn, "COMBAT",
-		fmt.Sprintf("defended received=%d npc_hp=%d player_hp=%d", reducedDmg, npc.CurrentHP, player.GetHp()))
-
+	h.Broadcast <- models.Message{
+        Scope:    models.ScopeRoom,
+        Filter:   player.Room.Id,
+        Category: "COMBAT",
+        Content:  fmt.Sprintf("player=%s defended received=%d npc_hp=%d player_hp=%d", player.Name, reducedDmg, npc.CurrentHP, player.GetHp()),
+    }
 	if player.GetHp() <= 0 {
 		player.SetStatus("healthy")
 		player.SetCombatNpc("")
