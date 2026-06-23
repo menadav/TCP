@@ -53,5 +53,13 @@ func LoadWorld(path string) (*models.World, error) {
 			}
 		}
 	}
+	for _, room := range world.Rooms {
+		for exitName, targetRoomID := range room.Exist {
+			if _, existe := world.Rooms[targetRoomID]; !existe {
+				logger.Warn("world load: exit points to non-existent room", 
+					"room", room.Id, "exit", exitName, "target_room", targetRoomID)
+			}
+		}
+	}
 	return world, nil
 }

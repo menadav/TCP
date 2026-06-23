@@ -9,6 +9,11 @@ type QuestResponse struct {
 	Title string
 }
 
+type WhoResponse struct {
+	Room   []string `json:"room"`
+	Server int      `json:"server"`
+}
+
 type WorldStateResponse struct {
 	RoomItems    []string              `json:"room_items"`
 	RoNpcsTalk   []string              `json:"room_npcs_talk"`

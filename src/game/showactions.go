@@ -57,10 +57,15 @@ func ShowQuest(player *models.Player) {
 
 func ShowWho(player *models.Player, h *models.Hub) {
 	nameList := h.GetOnlinePlayersNames()
-	bytesJSON, err := json.Marshal(nameList)
+	playersInRoom := h.GetPlayersInRoom(player.Room.Id)
+	whoData := models.WhoResponse{
+		Room:   playersInRoom,
+		Server: len(nameList),
+	}
+	bytesJSON, err := json.Marshal(whoData)
 	if err != nil {
 		speak.SendErr(player.Conn, speak.ErrInternal)
 		return
 	}
-	speak.SendSuccess(player.Conn, "players="+string(bytesJSON))
+	speak.SendSuccess(player.Conn, string(bytesJSON))
 }
