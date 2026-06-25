@@ -18,6 +18,7 @@ var (
 	ErrUnexpectedArgument = ErrCode{103, "UNEXPECTED_ARGUMENT"}
 	ErrInvalidArgument    = ErrCode{104, "INVALID_ARGUMENT"}
 	ErrMessageTooLong     = ErrCode{105, "MESSAGE_TOO_LONG"}
+	ErrCntrlD			  = ErrCode{106, "CONTROL_D"}
 
 	ErrNameInUse    = ErrCode{200, "NAME_IN_USE"}
 	ErrNameTooShort = ErrCode{201, "NAME_TOO_SHORT"}

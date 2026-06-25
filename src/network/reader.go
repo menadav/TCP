@@ -27,7 +27,7 @@ func StartScanner(scanner *bufio.Scanner, process func(string), conn net.Conn) {
 		process(scanner.Text())
 	}
 	err := scanner.Err()
-	if err := scanner.Err(); err != nil {
+	if err != nil {
 		if strings.Contains(err.Error(), "use of closed network connection") {
 			return
 		}

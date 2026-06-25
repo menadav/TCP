@@ -134,6 +134,7 @@ The first digit groups the error by domain:
 | 103 | `UNEXPECTED_ARGUMENT` | An argument was given to a command that takes none |
 | 104 | `INVALID_ARGUMENT` | The argument value is not valid (bad chat scope, bad group action…) |
 | 105 | `MESSAGE_TOO_LONG` | Chat message exceeds the allowed length |
+| 106 | `CONTROL_D` | Picked control D
 | 200 | `NAME_IN_USE` | The requested name is already connected |
 | 201 | `NAME_TOO_SHORT` | Name has fewer than 3 characters |
 | 202 | `NAME_TOO_LONG` | Name has more than 12 characters |
