@@ -23,7 +23,9 @@ func TakeItem(player *models.Player, query string, hub *models.Hub) {
 				speak.SendErr(player.Conn, speak.ErrHandsFull)
 				return
 			}
-			player.UpdateDmg(item)
+			if item.Hand {
+				player.UpdateDmg(item)
+			}
 			actualRoom.Items = append(actualRoom.Items[:i], actualRoom.Items[i+1:]...)
 			player.Inventory = append(player.Inventory, item)
 			player.HandleItemCollection(item.ID, hub.World.Quest)

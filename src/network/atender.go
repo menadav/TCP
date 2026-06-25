@@ -59,4 +59,5 @@ func ClientAtender(conn net.Conn, hub *models.Hub) {
 		parse.ParseCommandCli(line, player, hub)
 	}
 	StartScanner(scanner, processFunction, conn)
+	logger.Info("client pick control + D", "name", name_p, "addr", logger.Addr(conn))
 }

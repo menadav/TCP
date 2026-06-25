@@ -20,12 +20,13 @@ func TextClient(text string) {
 
 func StartScanner(scanner *bufio.Scanner, process func(string), conn net.Conn) {
 	for {
-		conn.SetReadDeadline(time.Now().Add(3 * time.Minute))
+		conn.SetReadDeadline(time.Now().Add(50 * time.Second))
 		if !scanner.Scan() {
 			break
 		}
 		process(scanner.Text())
 	}
+	err := scanner.Err()
 	if err := scanner.Err(); err != nil {
 		if strings.Contains(err.Error(), "use of closed network connection") {
 			return
@@ -45,6 +46,7 @@ func WriteFromStdin(conn net.Conn) {
 	for scanner.Scan() {
 		conn.Write([]byte(scanner.Text() + "\n"))
 	}
+	fmt.Println("ERR 106 CONTROL_D")
 }
 
 func BroadcastMessage(name string, hub *models.Hub) TextProcessor {
@@ -55,10 +57,4 @@ func BroadcastMessage(name string, hub *models.Hub) TextProcessor {
 			Content: fmt.Sprintf("EVT GLOBAL CHAT %s %s\n", new_name, msg),
 		}
 	}
-}
-
-func ReadLine(conn net.Conn) string {
-	scanner := bufio.NewScanner(conn)
-	scanner.Scan()
-	return scanner.Text()
 }

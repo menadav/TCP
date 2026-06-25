@@ -3,7 +3,7 @@ items:
     name: "Poke Flute"
     description: "A beautifully crafted flute with a hauntingly soothing melody. A treasured keepsake among Pokemon trainers."
     obtainable: true
-    hand: true
+    hand: false
     dmg: 0
 
   - id: "item_cubone_skull"
@@ -17,7 +17,7 @@ items:
     name: "Thick Bone"
     description: "A bone from a dead pokemon, it could be used as a weapon..."
     obtainable: true
-    hand: false
+    hand: true
     dmg: 34
 
   - id: "item_leftovers"
