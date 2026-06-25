@@ -5,6 +5,7 @@ import (
 	"answer_protocol/src/speakserver"
 	"fmt"
 	"strings"
+	"unicode"
 )
 
 func parseChat(partsChat []string, player *models.Player, h *models.Hub) {
@@ -14,6 +15,10 @@ func parseChat(partsChat []string, player *models.Player, h *models.Hub) {
 	text := partsChat[1]
 	if len(text) > 40 {
 		speak.SendErr(player.Conn, speak.ErrMessageTooLong)
+		return
+	}
+	if strings.IndexFunc(text, unicode.IsControl) >= 0 {
+		speak.SendErr(player.Conn, speak.ErrControlChars)
 		return
 	}
 	switch scopeStr {

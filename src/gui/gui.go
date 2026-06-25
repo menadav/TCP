@@ -173,6 +173,9 @@ func (ui *GameUI) sendCommand(cmd string) {
 	if cmd == "" {
 		return
 	}
+	if strings.ToUpper(cmd) == "WHO" {
+		ui.whoLogPending = true
+	}
 	fmt.Fprintf(ui.CurrentPlayer.Conn, "%s\n", cmd)
 	if !strings.HasPrefix(cmd, "CHAT") && !strings.HasPrefix(cmd, "LOGIN") && cmd != "REQ" {
 		time.Sleep(100 * time.Millisecond)
@@ -294,7 +297,7 @@ func (ui *GameUI) showExplorationMenu() {
 			ui.showInventoryMenu()
 		}),
 		widget.NewButton("STATUS", func() { ui.sendCommand("STATUS") }),
-		widget.NewButton("WHO", func() { ui.whoLogPending = true; ui.sendCommand("WHO") }),
+		widget.NewButton("WHO", func() { ui.sendCommand("WHO") }),
 		widget.NewButton("QUESTS", func() { ui.sendCommand("QUESTS") }),
 
 		widget.NewLabel("=== GROUP ==="),
