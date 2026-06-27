@@ -2,7 +2,7 @@
 
 > A real-time multiplayer text adventure (MUD) engine built on a custom TCP protocol, written in Go.
 
-![TAP World Workflow](assets/mud.png)
+![TAP MUD](assets/gui.png)
 
 [![Go](https://img.shields.io/badge/Go-1.18%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![Fyne](https://img.shields.io/badge/GUI-Fyne-informational?style=flat)](https://fyne.io/)
