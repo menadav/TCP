@@ -1,48 +1,38 @@
-# TAP — The Answer Protocol
+# 🎮 TAP — The Answer Protocol
 
-> A real-time multiplayer text adventure engine built on a custom TCP protocol, written in Go.
+> A real-time multiplayer text adventure (MUD) engine built on a custom TCP protocol, written in Go.
+
+![TAP World Workflow](assets/white_world_workflow.svg)
 
 [![Go](https://img.shields.io/badge/Go-1.18%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![Fyne](https://img.shields.io/badge/GUI-Fyne-informational?style=flat)](https://fyne.io/)
+[![Build](https://img.shields.io/badge/build-make-brightgreen?style=flat)]()
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Build](https://img.shields.io/badge/build-make-success)](#building)
 
 ---
 
-TAP is a shared-world, retro text adventure (MUD) where multiple players connect simultaneously to a persistent server and explore rooms, chat, form groups, fight NPCs and complete quests — all in real time over a line-based TCP protocol.
+## 📖 What is this?
 
-The project ships three components: a **TCP server**, a **CLI client** and a **GUI client** (built with [Fyne](https://fyne.io/)).
+**TAP — The Answer Protocol** is a shared-world, retro text adventure where multiple players connect simultaneously to a single server and explore rooms, chat, form groups, fight NPCs and complete quests — all in real time over a custom line-based TCP protocol.
 
----
-
-## Table of Contents
-
-- [Features](#features)
-- [Architecture](#architecture)
-- [Protocol](#protocol)
-- [World Design](#world-design)
-- [Getting Started](#getting-started)
-- [Make Targets](#make-targets)
-- [Error Reference](#error-reference)
-- [Server Logging](#server-logging)
-- [Testing](#testing)
-- [Authors](#authors)
+The project ships three components: a **TCP server**, a **CLI client**, and a **GUI client** built with [Fyne](https://fyne.io/). All world state lives in memory; no external database required.
 
 ---
 
-## Features
+## ✨ Features
 
-- **Multiplayer real-time** — unlimited concurrent TCP connections; all state changes are broadcast live.
-- **Dual clients** — lightweight CLI and a Fyne-based GUI with live player counters, separated chat/log views and D-pad movement.
-- **Custom protocol** — line-based `OK` / `ERR` / `EVT` framing with a versioned handshake (`proto=1`).
-- **Turn-based combat** — deterministic damage, defend/flee mechanics, NPC counter-attacks, and auto-respawn.
-- **Quest system** — `collect`, `kill`, `explore` and `deliver` quest types, tracked per player.
-- **Group system** — create, invite, join and leave named groups; group-scoped chat and events.
-- **Structured JSON logging** — RFC3339 timestamps, levelled entries, abuse detection (flood + rapid connections).
-- **Data-driven world** — rooms, items, NPCs and quests defined in `data.yaml`; no hardcoded world state.
+- **Real-time multiplayer** — unlimited concurrent TCP connections; all state changes are broadcast live to every client
+- **Dual clients** — lightweight terminal CLI and a Fyne GUI with live player counters, D-pad movement and separated chat/log views
+- **Custom protocol** — versioned, line-based `OK` / `ERR` / `EVT` framing with a `CONNECT` handshake
+- **Turn-based combat** — deterministic damage, `DEFEND`/`FLEE` mechanics, NPC counter-attacks and auto-respawn
+- **Quest system** — `collect`, `kill`, `explore` and `deliver` quest types tracked per player
+- **Group system** — create, invite, join and leave named groups with group-scoped chat and events
+- **Structured JSON logging** — RFC3339 timestamps, levelled entries (`INFO`/`WARN`/`ERROR`) and abuse detection
+- **Data-driven world** — rooms, items, NPCs and quests defined in `data.yaml`; no hardcoded world state
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 The server uses a **central hub + one goroutine per client** model. All global state mutations are serialised through a single `Hub` goroutine; per-entity `sync.RWMutex` locks protect `Room`, `Player` and `Group` structs.
 
@@ -50,21 +40,64 @@ The server uses a **central hub + one goroutine per client** model. All global s
 cmd/server ──► network.ClientAtender        (1 goroutine / client)
                      │
                      ├─ network.Authentication   (CONNECT handshake)
-                     ├─ parse.ParseCommandCli ──► src/game/*  (handlers)
-                     └─ player.ListenMsg          (1 goroutine / client → EVT)
+                     ├─ parse.ParseCommandCli ──► src/game/*  (command handlers)
+                     └─ player.ListenMsg          (1 goroutine / client → EVT events)
                      ▲
    models.Hub.Run ───┘   (single goroutine: Register / Unregister / Broadcast)
 ```
 
 Key design decisions:
 
-- **No shared mutable global state** — the client map lives exclusively inside `Hub.Run`; connections talk to it via typed channels (`Register`, `Unregister`, `Broadcast`).
-- **Buffered per-player `MsgChan`** — asynchronous event delivery keeps clients responsive without blocking command processing.
-- **Inline command dispatch** — `parse.ParseCommandCli` is a `switch` over a small, fixed command set; readable and easy to audit.
+- **No shared mutable global state** — the client map lives exclusively inside `Hub.Run`; connections communicate via typed channels
+- **Buffered per-player `MsgChan`** — asynchronous event delivery keeps clients responsive without blocking command processing
+- **Inline command dispatch** — `parse.ParseCommandCli` is a `switch` over a small, fixed command set; readable and easy to audit
 
 ---
 
-## Protocol
+## 🚀 Quick Start
+
+### 1. Install dependencies
+
+```bash
+make install
+```
+
+Fetches all Go module dependencies via `go mod download`.
+
+### 2. Build all binaries
+
+```bash
+make build
+```
+
+Compiles server, CLI client and GUI client into `./bin`.
+
+### 3. Run a multiplayer session
+
+```bash
+make run-server       # terminal 1 — starts the TCP server on :8080
+make run-client       # terminal 2 — connect a CLI client
+make run-client-gui   # terminal 3 — connect a GUI client
+```
+
+---
+
+## ⚙️ Make Targets
+
+| Target | Description |
+|--------|-------------|
+| `make install` | Download module dependencies |
+| `make build` | Compile server, CLI and GUI into `./bin` |
+| `make run-server` | Start the TCP server on `:8080` |
+| `make run-client` | Start the CLI client |
+| `make run-client-gui` | Start the GUI client |
+| `make lint` | `gofmt` check + `go vet` |
+| `make fmt-fix` | Reformat source with `gofmt -w` |
+| `make clean` | Remove built binaries |
+
+---
+
+## 🌐 Protocol
 
 Transport: **TCP, UTF-8, one message per line** (`\n` terminated).
 
@@ -72,7 +105,7 @@ Transport: **TCP, UTF-8, one message per line** (`\n` terminated).
 
 ```
 ← OK hello proto=1
-→ CONNECT <name>        # 3–12 letters, unique across the session
+→ CONNECT <name>          # 3–12 letters, unique across the session
 ← OK welcome name=<name>
 ```
 
@@ -81,23 +114,23 @@ Transport: **TCP, UTF-8, one message per line** (`\n` terminated).
 | Prefix | Meaning |
 |--------|---------|
 | `OK <payload>` | Success — payload is `key=value` or a JSON object |
-| `ERR <code> <SYMBOL>` | Failure — see [Error Reference](#error-reference) |
-| `EVT <category> <data>` | Async event pushed by the server (chat, presence, combat…) |
+| `ERR <code> <SYMBOL>` | Failure — see [Error Reference](#-error-reference) |
+| `EVT <category> <data>` | Async server push (chat, presence, combat…) |
 
 ### Non-standard extensions
 
 | Command | Behaviour |
 |---------|-----------|
-| `REQ` | Returns a JSON snapshot (`WorldStateResponse`) of the current room — used by the GUI client to refresh its view |
-| `DEFEND` / `FLEE` | Combat-only commands (our design choice, not in the base RFC) |
+| `REQ` | Returns a JSON snapshot (`WorldStateResponse`) of the current room — used by the GUI to refresh its view |
+| `DEFEND` / `FLEE` | Combat-only commands |
 | `WHO` | Replies `OK who={"room":[names],"server":N}` — live player counters |
 | `INVENTORY` | Replies with a JSON array of the player's items |
 
 ---
 
-## World Design
+## 🗺️ World Design
 
-The world is themed around the **Kanto region** and ships with 8 rooms, 4 items, 3 NPCs and 2 quests.
+The world is themed around the **Kanto region** and ships with **8 rooms**, **4 items**, **3 NPCs** and **2 quests**.
 
 ```
               +------------------+
@@ -110,33 +143,33 @@ The world is themed around the **Kanto region** and ships with 8 rooms, 4 items,
 | (Pkmn Tower)  |----->|(Lavender Crossrd)|
 +---------------+  E   +--------+---------+
                          S  |  N
-              +-------------+----+   E   +----------------+
-              |   silence_bridge |       |  guard_house   |  ← Snorlax blocks NORTH
-              | (Silence Bridge) |       | (Guard House)  |
-              +--------+---------+       +-------+--------+
-                   N   |   S                 N   |   S
-              +--------+---------+   E   +-------+--------+
+              +--------------------------+
+              |     silence_bridge       |  <- Snorlax blocks NORTH
+              |    (Silence Bridge)      |
+              +--------+-----------------+
+                   N   |   S
+              +--------+---------+   E   +----------------+
               |     route_11     |------>|   graveyard    |
               |   (Route 11)     |<------| (Graveyard)    |
               +--------+---------+   W   +----------------+
                    S   |   N
               +------------------+
               |      start       |
-              | (Vermilion City) |
+              | (Vermilion City) |   <- Spawn point
               +------------------+
 ```
 
 ### Rooms
 
-| Room ID | Name | Notable |
-|---------|------|---------|
+| Room | Name | Notable |
+|------|------|---------|
 | `start` | Vermilion City | Spawn point; Club President (quest-giver) |
 | `graveyard` | Graveyard | Thick Bone weapon |
 | `route_11` | Route 11 | — |
 | `guard_house` | Guard House | — |
 | `silence_bridge` | Silence Bridge | Snorlax blocks `NORTH` until defeated |
 | `crossroad` | Lavender Crossroad | Leftovers item |
-| `tower` | Pokémon Tower | Cubone's Skull |
+| `tower` | Pokemon Tower | Cubone's Skull |
 | `lavender_town` | Lavender Town | Mr. Fuji (quest-giver) |
 
 ### Items
@@ -146,75 +179,51 @@ The world is themed around the **Kanto region** and ships with 8 rooms, 4 items,
 | Thick Bone | Weapon | Sets player damage to `34` |
 | Leftovers | Quest item | Required for `quest_blocked_path` |
 | Cubone's Skull | Quest item | Required for `quest_tower_mystery` |
-| Poké Flute | Quest reward | Granted on main quest completion |
+| Poke Flute | Quest reward | Granted on main quest completion |
 
 ### Quests
 
 | ID | Type | Objective | Reward |
 |----|------|-----------|--------|
-| `quest_blocked_path` | deliver | Defeat Snorlax → bring Leftovers to the Club President | Poké Flute |
+| `quest_blocked_path` | deliver | Defeat Snorlax -> bring Leftovers to the Club President | Poke Flute |
 | `quest_tower_mystery` | collect | Retrieve Cubone's Skull for Mr. Fuji | — |
 
-### Combat
-
-- Players start at **100 HP**. `ATTACK <npc>` initiates combat and sets the player to `combat` state.
-- Allowed commands while in combat: `USE_ITEM` (attack), `DEFEND`, `FLEE`, `STATUS`.
-- **Damage:** fully deterministic — `5` unarmed, or the equipped weapon's `dmg` value.
-- **Counter-attack:** the NPC strikes back after each non-lethal hit (Snorlax deals `49`). `DEFEND` halves incoming damage for that turn.
-- **Defeat:** reaching 0 HP respawns the player at `start` with `Max_HP − 1` (99) HP.
-- All combat events are pushed as `EVT COMBAT ...`; victories are broadcast to the room.
-
 ---
 
-## Getting Started
+## ⚔️ Combat System
 
-### Requirements
+Turn-based, player-initiated combat against hostile NPCs.
 
-- **Go ≥ 1.18** (developed and tested with 1.24)
-- For the **GUI client** only: a C compiler and X11/OpenGL development libraries (Fyne uses cgo)
-
-### Quick start
-
-```bash
-# 1. Fetch dependencies
-make install
-
-# 2. Build all binaries into ./bin
-make build
-
-# 3. Start the server (terminal 1)
-make run-server
-
-# 4. Connect a CLI client (terminal 2)
-make run-client
-
-# 5. Connect a GUI client (terminal 3)
-make run-client-gui
+```
+ATTACK <npc>
+      │
+      ▼
+ [combat state]
+      │
+      ├─ USE_ITEM  -> player deals weapon dmg (34) or unarmed dmg (5)
+      │                └─ NPC counter-attacks with attack_dmg
+      ├─ DEFEND    -> same as USE_ITEM but incoming damage is halved
+      ├─ FLEE      -> exits combat, no damage taken
+      └─ STATUS    -> shows current HP and combat state
 ```
 
----
-
-## Make Targets
-
-| Target | Description |
-|--------|-------------|
-| `make install` | Download module dependencies (`go mod download`) |
-| `make build` | Compile server, CLI and GUI into `./bin` |
-| `make run-server` | Start the TCP server on `:8080` |
-| `make run-client` | Start the CLI client |
-| `make run-client-gui` | Start the GUI client |
-| `make lint` | `gofmt` check + `go vet` |
-| `make fmt-fix` | Reformat source with `gofmt -w` |
-| `make clean` | Remove built binaries |
+- Players start at **100 HP**. Reaching 0 HP triggers respawn at `start` with `Max_HP - 1` (99) HP.
+- Combat is **fully deterministic** — no random component.
+- All events are pushed as `EVT COMBAT ...`; victories are broadcast to the room.
 
 ---
 
-## Error Reference
+## 📋 Requirements
 
-All error codes are declared in `src/speakserver/errors.go` (single source of truth).
-Format: `ERR <code> <SYMBOL>`
+- **Go >= 1.18** (developed and tested with 1.24)
+- For the **GUI client** only: a C compiler and X11/OpenGL development libraries (Fyne uses cgo)
 
-The leading digit identifies the domain:
+---
+
+## 🔍 Error Reference
+
+All error codes are declared in `src/speakserver/errors.go`.
+Format: `ERR <code> <SYMBOL>` — first digit identifies the domain.
 
 | Range | Domain |
 |-------|--------|
@@ -277,11 +286,9 @@ The leading digit identifies the domain:
 
 ---
 
-## Server Logging
+## 📊 Server Logging
 
-The server emits **structured JSON logs** to stdout via `src/logger` (built on `log` + `encoding/json` for Go 1.18 compatibility).
-
-### Log entry format
+The server emits **structured JSON logs** to stdout via `src/logger`.
 
 ```json
 {
@@ -295,51 +302,61 @@ The server emits **structured JSON logs** to stdout via `src/logger` (built on `
 }
 ```
 
-### Event types
-
-| `msg` | Level | Trigger |
-|-------|-------|---------|
-| `server ready` | INFO | Server starts listening |
-| `connection open` | INFO | TCP connection accepted |
-| `client registered` | INFO | Successful authentication |
-| `auth failed` | WARN | Authentication aborted/failed |
-| `connection close` | INFO | Client disconnects |
-| `command received` | INFO | Any command from a client |
-| `response sent` | INFO | Server reply or event |
-| `error response` | WARN | Error code sent to a client |
-| `world change` | INFO | Item, NPC or combat state mutation |
-| `quest progress` | INFO | Quest accept or complete |
-| `abuse detected` | WARN | Command flooding or rapid connections |
-
-### Abuse detection
-
-- **Command flooding** — more than 20 commands within a 10-second window per connection.
-- **Rapid connections** — more than 5 connections from the same IP within 10 seconds.
-
-Filter for warnings only:
+Filter for warnings and errors only:
 
 ```bash
 ./bin/tap-server | jq 'select(.level=="WARN")'
 ```
 
----
-
-## Testing
-
-Multiplayer behaviour is validated manually by running the server with multiple concurrent clients.
-
-| Scenario | Steps |
-|----------|-------|
-| **Presence & chat** | Connect two clients; `MOVE` one between rooms and confirm `EVT ROOM PRESENCE ENTER/LEAVE` on the other. Send `CHAT GLOBAL/ROOM/GROUP` and verify scope-correct delivery. |
-| **Items** | `TAKE` an item on client A; confirm it disappears from `LOOK` on client B. `DROP` it and confirm it reappears. |
-| **Combat** | `ATTACK` a hostile NPC; cycle through `USE_ITEM`, `DEFEND`, `FLEE`; check `STATUS`; verify respawn at 0 HP. |
-| **Quests** | `TALK` to a quest-giver → `QUEST ACCEPT` → fulfil objective → `QUEST COMPLETE`; verify reward in `INVENTORY`. |
+Abuse detection monitors **command flooding** (> 20 commands / 10 s per connection) and **rapid connections** (> 5 connections / 10 s per IP).
 
 ---
 
-## Authors
+## 📁 Project Structure
+
+```
+TAP/
+├── cmd/
+│   ├── server/         # TCP server entry point
+│   ├── client/         # CLI client entry point
+│   └── client-gui/     # GUI client entry point
+├── src/
+│   ├── game/           # Command handlers
+│   ├── models/         # Player, Room, NPC, Item, World structs
+│   ├── network/        # ClientAtender, Hub, Authentication
+│   ├── parse/          # Command parser
+│   ├── speakserver/    # OK/ERR/EVT reply format and error catalog
+│   └── logger/         # Structured JSON logger
+├── assets/             # World workflow diagram
+├── data.yaml           # World definition (rooms, items, NPCs, quests)
+├── Makefile
+└── go.mod
+```
+
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology |
+|-----------|-----------|
+| Language | Go 1.18+ |
+| GUI framework | [Fyne](https://fyne.io/) |
+| Concurrency | Goroutines + channels + `sync.RWMutex` |
+| World definition | YAML (`data.yaml`) |
+| Logging | `log` + `encoding/json` (stdlib) |
+| Build tool | GNU Make |
+
+---
+
+## 👥 Authors
 
 | Contributor | Scope |
 |-------------|-------|
-| **dmena-li** | Core implementation — TCP server foundation, `Hub`/`ClientAtender` lifecycle, protocol framing, world model, command parser, gameplay (move/look/inventory/combat/quests/groups), initial GUI and Fyne client wiring |
-| **egalindo** | Build tooling, lint/formatting, error-code catalog, world redesign (Kanto arc, Snorlax mechanic), structured JSON logging, robustness fixes (hub broadcast, channel-close race), GUI V4 polish, documentation |
+| **dmena-li** | TCP server foundation, `Hub`/`ClientAtender` lifecycle, protocol framing, world model, command parser, gameplay (movement, combat, quests, groups), initial Fyne GUI |
+| **egalindo** | Build tooling, lint/formatting, error-code catalog, world redesign (Kanto arc + Snorlax mechanic), structured JSON logging, robustness fixes, GUI V4 polish, documentation |
+
+---
+
+## 📄 License
+
+This project is open source. See [LICENSE](LICENSE) for details.
