@@ -1,130 +1,235 @@
-*This project has been created as part of the 42 curriculum by dmena-li, egalindo.*
-
 # TAP — The Answer Protocol
 
-A shared-world, retro text adventure (a small MUD) built around a line-based TCP
-protocol. A single server hosts a persistent-feeling world; multiple players
-connect at the same time with either a **CLI client** or a **GUI client** and can
-explore rooms, chat, fight NPCs, form groups and complete quests in real time.
+> A real-time multiplayer text adventure engine built on a custom TCP protocol, written in Go.
 
-## Description
+[![Go](https://img.shields.io/badge/Go-1.18%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Build](https://img.shields.io/badge/build-make-success)](#building)
 
-The goal of the project is to implement a complete multiplayer text adventure:
+---
 
-- A **server** that loads a static world (`data.yaml`), accepts many concurrent
-  clients over TCP and speaks a simple, line-based protocol (`OK` / `ERR` / `EVT`).
-- A **CLI client** for text interaction.
-- A **GUI client** (built with [Fyne](https://fyne.io/)) for a richer interface.
+TAP is a shared-world, retro text adventure (MUD) where multiple players connect simultaneously to a persistent server and explore rooms, chat, form groups, fight NPCs and complete quests — all in real time over a line-based TCP protocol.
 
-State lives only in memory: it resets when the server restarts (no persistence
-is required).
+The project ships three components: a **TCP server**, a **CLI client** and a **GUI client** (built with [Fyne](https://fyne.io/)).
 
-## Instructions
+---
 
-Requirements:
+## Table of Contents
 
-- **Go** ≥ 1.18 (developed and tested with 1.24).
-- For the **GUI** client only (Fyne uses cgo): a C compiler and X11/OpenGL
-  development libraries.
+- [Features](#features)
+- [Architecture](#architecture)
+- [Protocol](#protocol)
+- [World Design](#world-design)
+- [Getting Started](#getting-started)
+- [Make Targets](#make-targets)
+- [Error Reference](#error-reference)
+- [Server Logging](#server-logging)
+- [Testing](#testing)
+- [Authors](#authors)
 
-```bash
-# Fetch Go module dependencies
-make install
-```
+---
 
-See **Building and Running** below for the full target list.
+## Features
 
-## Resources
+- **Multiplayer real-time** — unlimited concurrent TCP connections; all state changes are broadcast live.
+- **Dual clients** — lightweight CLI and a Fyne-based GUI with live player counters, separated chat/log views and D-pad movement.
+- **Custom protocol** — line-based `OK` / `ERR` / `EVT` framing with a versioned handshake (`proto=1`).
+- **Turn-based combat** — deterministic damage, defend/flee mechanics, NPC counter-attacks, and auto-respawn.
+- **Quest system** — `collect`, `kill`, `explore` and `deliver` quest types, tracked per player.
+- **Group system** — create, invite, join and leave named groups; group-scoped chat and events.
+- **Structured JSON logging** — RFC3339 timestamps, levelled entries, abuse detection (flood + rapid connections).
+- **Data-driven world** — rooms, items, NPCs and quests defined in `data.yaml`; no hardcoded world state.
 
-- Go standard library — [`net`](https://pkg.go.dev/net) and
-  [`bufio`](https://pkg.go.dev/bufio) packages.
-- [Effective Go](https://go.dev/doc/effective_go) and the
-  [Go Memory Model](https://go.dev/ref/mem) (goroutines, channels).
-- [Fyne toolkit documentation](https://developer.fyne.io/).
-- Background on MUDs (Multi-User Dungeons) as the historical inspiration.
-
-**Use of AI:** AI assistance (Claude) was used as a helper for: designing and
-documenting the error-code catalog, setting up the build tooling (`Makefile`),
-drafting this README, and reviewing the code against the project requirements.
-All generated content was reviewed and is understood by the team.
+---
 
 ## Architecture
 
-The server uses a **central hub + one goroutine per client** model with channels
-for coordination (no shared global mutable state passed around by hand):
-
-- `cmd/server` opens the TCP listener and, for each accepted connection, spawns
-  `network.ClientAtender` in its own goroutine.
-- `models.Hub` runs in a single goroutine (`Hub.Run`) and owns the maps of
-  connected clients and groups. Connections talk to it through channels:
-  `Register`, `Unregister` and `Broadcast`. This serializes all global state
-  changes and avoids races on the client map.
-- Each player has a buffered `MsgChan` and a dedicated `ListenMsg` goroutine that
-  writes asynchronous events (`EVT ...`) to that player's socket. This keeps the
-  clients responsive while receiving events.
-- Per-entity locks (`sync.RWMutex`) protect `Room`, `Player` and `Group` state.
-
-Command handling is **inline dispatch**: `parse.ParseCommandCli` is a `switch`
-that validates arguments and calls the matching handler in `src/game`. We chose
-inline handling over a dispatcher/router because the command set is small and
-fixed, which keeps the flow easy to read and review.
+The server uses a **central hub + one goroutine per client** model. All global state mutations are serialised through a single `Hub` goroutine; per-entity `sync.RWMutex` locks protect `Room`, `Player` and `Group` structs.
 
 ```
-cmd/server ──► network.ClientAtender (1 goroutine/client)
+cmd/server ──► network.ClientAtender        (1 goroutine / client)
                      │
-                     ├─ network.Authentication        (CONNECT handshake)
-                     ├─ parse.ParseCommandCli ──► src/game/*  (command handlers)
-                     └─ player.ListenMsg (1 goroutine/client) ──► EVT events
+                     ├─ network.Authentication   (CONNECT handshake)
+                     ├─ parse.ParseCommandCli ──► src/game/*  (handlers)
+                     └─ player.ListenMsg          (1 goroutine / client → EVT)
                      ▲
-   models.Hub.Run ───┘  (single goroutine: Register / Unregister / Broadcast)
+   models.Hub.Run ───┘   (single goroutine: Register / Unregister / Broadcast)
 ```
 
-## Protocol Implementation
+Key design decisions:
 
-- Transport: TCP, UTF-8, **one message per line** (`\n` terminated).
-- On connect the server greets with `OK hello proto=1`; the client must then send
-  `CONNECT <name>` (3–12 letters, unique) before any other command.
-- Replies use three line prefixes:
-  - `OK <payload>` — success (`payload` may be `key=value` or a JSON object).
-  - `ERR <code> <SYMBOL>` — error (see **Error Codes**).
-  - `EVT <category> <data>` — asynchronous event (chat, presence, combat, group…).
+- **No shared mutable global state** — the client map lives exclusively inside `Hub.Run`; connections talk to it via typed channels (`Register`, `Unregister`, `Broadcast`).
+- **Buffered per-player `MsgChan`** — asynchronous event delivery keeps clients responsive without blocking command processing.
+- **Inline command dispatch** — `parse.ParseCommandCli` is a `switch` over a small, fixed command set; readable and easy to audit.
 
-### Deviations from RFC 42TAP
+---
 
-The RFC leaves many details to each group; the following are our explicit choices
-/ deviations and are documented here as required:
+## Protocol
 
-- **`REQ`** is a non-standard helper command used by our GUI client to refresh its
-  view. It replies with a compact JSON snapshot (`WorldStateResponse`) of the
-  current room items, NPCs, inventory and quests. It is specific to our client
-  pair and is not part of the standard command set.
-- **In-combat attack** is issued with `USE_ITEM` (mapped to the attack action)
-  while a player is in the `combat` state; `ATTACK <npc>` is used to *start*
-  combat. Additional combat commands `DEFEND` and `FLEE` are our design choice.
-- **`WHO`** replies with `OK who=<json>`, where the JSON is
-  `{"room": [names], "server": N}` — the players in the current room and the
-  total number of players online. The GUI uses it to show live player counters.
-- **`INVENTORY`** replies with the JSON array of the player's items.
+Transport: **TCP, UTF-8, one message per line** (`\n` terminated).
 
-### Error Codes
+### Handshake
 
-All error codes are declared in a single source of truth:
-`src/speakserver/errors.go`. Every error is one line: `ERR <code> <SYMBOL>` where
-`<code>` is a 3-digit number and `<SYMBOL>` is a stable, space-free token.
+```
+← OK hello proto=1
+→ CONNECT <name>        # 3–12 letters, unique across the session
+← OK welcome name=<name>
+```
 
-The first digit groups the error by domain:
+### Message prefixes
 
-| Range | Domain                    |
-|-------|---------------------------|
-| 1xx   | Protocol / command syntax |
-| 2xx   | Session / authentication  |
-| 3xx   | World / movement          |
-| 4xx   | Items                     |
-| 5xx   | NPCs                      |
-| 6xx   | Combat                    |
-| 7xx   | Quests                    |
-| 8xx   | Groups                    |
-| 9xx   | Server                    |
+| Prefix | Meaning |
+|--------|---------|
+| `OK <payload>` | Success — payload is `key=value` or a JSON object |
+| `ERR <code> <SYMBOL>` | Failure — see [Error Reference](#error-reference) |
+| `EVT <category> <data>` | Async event pushed by the server (chat, presence, combat…) |
+
+### Non-standard extensions
+
+| Command | Behaviour |
+|---------|-----------|
+| `REQ` | Returns a JSON snapshot (`WorldStateResponse`) of the current room — used by the GUI client to refresh its view |
+| `DEFEND` / `FLEE` | Combat-only commands (our design choice, not in the base RFC) |
+| `WHO` | Replies `OK who={"room":[names],"server":N}` — live player counters |
+| `INVENTORY` | Replies with a JSON array of the player's items |
+
+---
+
+## World Design
+
+The world is themed around the **Kanto region** and ships with 8 rooms, 4 items, 3 NPCs and 2 quests.
+
+```
+              +------------------+
+              |  lavender_town   |
+              | (Lavender Town)  |
+              +--------+---------+
+                   N   |   S
++---------------+  W   +------------------+
+|     tower     |<-----|    crossroad     |
+| (Pkmn Tower)  |----->|(Lavender Crossrd)|
++---------------+  E   +--------+---------+
+                         S  |  N
+              +-------------+----+   E   +----------------+
+              |   silence_bridge |       |  guard_house   |  ← Snorlax blocks NORTH
+              | (Silence Bridge) |       | (Guard House)  |
+              +--------+---------+       +-------+--------+
+                   N   |   S                 N   |   S
+              +--------+---------+   E   +-------+--------+
+              |     route_11     |------>|   graveyard    |
+              |   (Route 11)     |<------| (Graveyard)    |
+              +--------+---------+   W   +----------------+
+                   S   |   N
+              +------------------+
+              |      start       |
+              | (Vermilion City) |
+              +------------------+
+```
+
+### Rooms
+
+| Room ID | Name | Notable |
+|---------|------|---------|
+| `start` | Vermilion City | Spawn point; Club President (quest-giver) |
+| `graveyard` | Graveyard | Thick Bone weapon |
+| `route_11` | Route 11 | — |
+| `guard_house` | Guard House | — |
+| `silence_bridge` | Silence Bridge | Snorlax blocks `NORTH` until defeated |
+| `crossroad` | Lavender Crossroad | Leftovers item |
+| `tower` | Pokémon Tower | Cubone's Skull |
+| `lavender_town` | Lavender Town | Mr. Fuji (quest-giver) |
+
+### Items
+
+| Item | Type | Effect |
+|------|------|--------|
+| Thick Bone | Weapon | Sets player damage to `34` |
+| Leftovers | Quest item | Required for `quest_blocked_path` |
+| Cubone's Skull | Quest item | Required for `quest_tower_mystery` |
+| Poké Flute | Quest reward | Granted on main quest completion |
+
+### Quests
+
+| ID | Type | Objective | Reward |
+|----|------|-----------|--------|
+| `quest_blocked_path` | deliver | Defeat Snorlax → bring Leftovers to the Club President | Poké Flute |
+| `quest_tower_mystery` | collect | Retrieve Cubone's Skull for Mr. Fuji | — |
+
+### Combat
+
+- Players start at **100 HP**. `ATTACK <npc>` initiates combat and sets the player to `combat` state.
+- Allowed commands while in combat: `USE_ITEM` (attack), `DEFEND`, `FLEE`, `STATUS`.
+- **Damage:** fully deterministic — `5` unarmed, or the equipped weapon's `dmg` value.
+- **Counter-attack:** the NPC strikes back after each non-lethal hit (Snorlax deals `49`). `DEFEND` halves incoming damage for that turn.
+- **Defeat:** reaching 0 HP respawns the player at `start` with `Max_HP − 1` (99) HP.
+- All combat events are pushed as `EVT COMBAT ...`; victories are broadcast to the room.
+
+---
+
+## Getting Started
+
+### Requirements
+
+- **Go ≥ 1.18** (developed and tested with 1.24)
+- For the **GUI client** only: a C compiler and X11/OpenGL development libraries (Fyne uses cgo)
+
+### Quick start
+
+```bash
+# 1. Fetch dependencies
+make install
+
+# 2. Build all binaries into ./bin
+make build
+
+# 3. Start the server (terminal 1)
+make run-server
+
+# 4. Connect a CLI client (terminal 2)
+make run-client
+
+# 5. Connect a GUI client (terminal 3)
+make run-client-gui
+```
+
+---
+
+## Make Targets
+
+| Target | Description |
+|--------|-------------|
+| `make install` | Download module dependencies (`go mod download`) |
+| `make build` | Compile server, CLI and GUI into `./bin` |
+| `make run-server` | Start the TCP server on `:8080` |
+| `make run-client` | Start the CLI client |
+| `make run-client-gui` | Start the GUI client |
+| `make lint` | `gofmt` check + `go vet` |
+| `make fmt-fix` | Reformat source with `gofmt -w` |
+| `make clean` | Remove built binaries |
+
+---
+
+## Error Reference
+
+All error codes are declared in `src/speakserver/errors.go` (single source of truth).
+Format: `ERR <code> <SYMBOL>`
+
+The leading digit identifies the domain:
+
+| Range | Domain |
+|-------|--------|
+| 1xx | Protocol / command syntax |
+| 2xx | Session / authentication |
+| 3xx | World / movement |
+| 4xx | Items |
+| 5xx | NPCs |
+| 6xx | Combat |
+| 7xx | Quests |
+| 8xx | Groups |
+| 9xx | Server |
+
+<details>
+<summary>Full error code table</summary>
 
 | Code | Symbol | Meaning |
 |------|--------|---------|
@@ -132,267 +237,109 @@ The first digit groups the error by domain:
 | 101 | `UNKNOWN_COMMAND` | Command not recognized |
 | 102 | `MISSING_ARGUMENT` | A required argument is missing |
 | 103 | `UNEXPECTED_ARGUMENT` | An argument was given to a command that takes none |
-| 104 | `INVALID_ARGUMENT` | The argument value is not valid (bad chat scope, bad group action…) |
+| 104 | `INVALID_ARGUMENT` | The argument value is not valid |
 | 105 | `MESSAGE_TOO_LONG` | Chat message exceeds the allowed length |
-| 106 | `CONTROL_D` | Picked control D
+| 106 | `CONTROL_D` | Connection closed via Ctrl-D |
 | 200 | `NAME_IN_USE` | The requested name is already connected |
 | 201 | `NAME_TOO_SHORT` | Name has fewer than 3 characters |
 | 202 | `NAME_TOO_LONG` | Name has more than 12 characters |
-| 203 | `NAME_INVALID` | Name contains characters other than letters |
-| 204 | `CONNECTION_TIMEOUT` | The connection timed out (auth or inactivity) |
-| 300 | `NO_EXIT` | There is no exit in that direction |
-| 301 | `NOT_IN_ROOM` | The player is not currently in a room |
-| 302 | `PATH_BLOCKED` | An NPC blocks that exit (e.g. Snorlax on the bridge) |
-| 400 | `ITEM_NOT_FOUND` | No matching item in the room/inventory |
+| 203 | `NAME_INVALID` | Name contains non-letter characters |
+| 204 | `CONNECTION_TIMEOUT` | Connection timed out (auth or inactivity) |
+| 300 | `NO_EXIT` | No exit in that direction |
+| 301 | `NOT_IN_ROOM` | Player is not currently in a room |
+| 302 | `PATH_BLOCKED` | An NPC blocks that exit |
+| 400 | `ITEM_NOT_FOUND` | No matching item in room/inventory |
 | 401 | `ITEM_NOT_OBTAINABLE` | The item cannot be taken |
-| 402 | `HANDS_FULL` | The player already holds a weapon |
+| 402 | `HANDS_FULL` | Player already holds a weapon |
 | 500 | `NPC_NOT_FOUND` | No matching NPC in the room |
 | 501 | `NPC_NO_DIALOGUE` | The NPC has no dialogue |
 | 502 | `NPC_NOT_HOSTILE` | Cannot attack a non-hostile NPC |
 | 503 | `NPC_HOSTILE` | Cannot talk to a hostile NPC |
-| 600 | `NOT_IN_COMBAT` | The action requires being in combat |
-| 601 | `ALREADY_IN_COMBAT` | The NPC is already engaged in combat |
-| 602 | `TARGET_GONE` | The combat target no longer exists |
-| 603 | `TARGET_DEFEATED` | The NPC is already defeated |
-| 604 | `COMMAND_NOT_ALLOWED_IN_COMBAT` | Only USE_ITEM/DEFEND/FLEE/STATUS are allowed in combat |
-| 700 | `QUEST_NOT_FOUND` | No quest with that id |
-| 701 | `QUEST_ALREADY_ACTIVE` | The quest is already in progress |
-| 702 | `QUEST_ALREADY_COMPLETED` | The quest is already completed |
-| 703 | `QUEST_NOT_ACTIVE` | The quest is not in progress |
-| 704 | `OBJECTIVE_INCOMPLETE` | The quest objective is not yet met |
-| 705 | `MISSING_REQUIRED_ITEM` | The required item is not in the inventory |
-| 800 | `NOT_IN_GROUP` | The player is not in a group |
-| 801 | `ALREADY_IN_GROUP` | The player is already in a group |
+| 600 | `NOT_IN_COMBAT` | Action requires being in combat |
+| 601 | `ALREADY_IN_COMBAT` | NPC is already engaged in combat |
+| 602 | `TARGET_GONE` | Combat target no longer exists |
+| 603 | `TARGET_DEFEATED` | NPC is already defeated |
+| 604 | `COMMAND_NOT_ALLOWED_IN_COMBAT` | Only `USE_ITEM`/`DEFEND`/`FLEE`/`STATUS` allowed in combat |
+| 700 | `QUEST_NOT_FOUND` | No quest with that ID |
+| 701 | `QUEST_ALREADY_ACTIVE` | Quest is already in progress |
+| 702 | `QUEST_ALREADY_COMPLETED` | Quest is already completed |
+| 703 | `QUEST_NOT_ACTIVE` | Quest is not in progress |
+| 704 | `OBJECTIVE_INCOMPLETE` | Quest objective not yet met |
+| 705 | `MISSING_REQUIRED_ITEM` | Required item not in inventory |
+| 800 | `NOT_IN_GROUP` | Player is not in a group |
+| 801 | `ALREADY_IN_GROUP` | Player is already in a group |
 | 802 | `GROUP_NOT_FOUND` | No group matches the request |
 | 803 | `NOT_GROUP_LEADER` | Only the group leader can perform this action |
 | 804 | `USER_NOT_FOUND` | No connected user with that name |
 | 900 | `INTERNAL_ERROR` | Unexpected server-side error |
 
-## Combat System
+</details>
 
-Turn-based, player-initiated combat:
-
-- Players start with **100 HP**. `ATTACK <npc>` starts combat against a hostile
-  NPC and puts the player in the `combat` state.
-- While in combat the allowed commands are `USE_ITEM` (attack), `DEFEND`, `FLEE`
-  and `STATUS`; any other command is rejected with `604`.
-- **Damage formula:** combat is fully deterministic (no random component). A hit
-  deals exactly the player's current damage: `5` unarmed, or the equipped weapon's
-  `dmg` (taking the Thick Bone sets it to `34`). Dropping the weapon resets to the
-  unarmed base of `5`.
-- **Counter-attack:** after a non-lethal hit the NPC deals its `attack_dmg`
-  (Snorlax hits `49`). `DEFEND` halves the incoming damage that turn.
-- **FLEE** leaves combat with no damage.
-- **Respawn:** a player reaching 0 HP respawns at the safe start room with reduced
-  health (`Max_HP - 1`, i.e. 99), satisfying the spec's "reduced health" rule.
-- Combat progress is pushed to the player as `EVT COMBAT ...` and victories are
-  broadcast to the room.
-
-## Quest System
-
-Quests are defined in `data.yaml` and tracked per player:
-
-- **Types:** `collect` (gather an item), `kill` (defeat an NPC), `explore` (reach a
-  room) and `deliver`.
-- `QUEST ACCEPT <id>` starts a quest; objective progress is updated automatically
-  as the player kills the target NPC, visits the required room or collects the
-  required item (`PlayerQuest` flags `NpcKilled` / `RoomVisited` / `ItemCollected`).
-- `QUEST COMPLETE <id>` validates the objective; on success it consumes the
-  required item (if any) and grants the reward item. Invalid attempts return the
-  matching `7xx` error.
-- `QUESTS` lists the player's quests with their status and progress.
-
-## World Design
-
-The full player workflow — from spawning in the first room to completing the
-main quest — is shown below (diagram source: [`assets/mermaid.txt`](assets/mermaid.txt)):
-
-![Player workflow diagram](assets/white_world_workflow.svg)
-
-The world (`data.yaml`) has **8 interconnected rooms** themed around the Kanto
-region. It contains **4 items**, **3 NPCs** (two quest-givers and one enemy) and
-**2 quests**. The four southern rooms form a closed loop (a full circuit) and the
-northern path is an optional branch.
-
-**Core mechanic — a blocked path:** Snorlax sits on the Silence Bridge and blocks
-its `NORTH` exit while it is alive, so any `MOVE NORTH` there is rejected with
-`PATH_BLOCKED` (302). The player must take the **Thick Bone** (a weapon) from the
-Graveyard and defeat Snorlax in combat; once its HP reaches 0 the block clears
-automatically and the way north opens. This is data-driven: an NPC declares the
-direction it guards via a `blocks_dir` field.
-
-All exits are bidirectional. Directions shown on each link:
-
-```
-                  +------------------+
-                  |  lavender_town   |
-                  | (Lavender Town)  |
-                  +--------+---------+
-                       N   |   S
- +---------------+   W     +--------+---------+
- |     tower     |<--------|    crossroad     |
- | (Pkmn Tower)  |-------->|(Lavender Crossrd)|
- +---------------+   E     +--------+---------+
-                       S   |   N
-                  +--------+---------+
-                  | silence_bridge   |   <-- Snorlax blocks NORTH
-                  | (Silence Bridge) |
-                  +--------+---------+
-                       N   |   S
-                  +--------+---------+   E    +----------------+
-                  |    route_11      |------->|  guard_house   |
-                  |   (Route 11)     |<-------| (Guard House)  |
-                  +--------+---------+   W    +-------+--------+
-                       S   |   N                  N   |   S
-                  +--------+---------+   E    +-------+--------+
-                  |     start        |------->|   graveyard    |
-                  | (Vermilion City) |<-------|  (Graveyard)   |
-                  +------------------+   W    +----------------+
-```
-
-| Room | NPCs | Items |
-|------|------|-------|
-| start (Vermilion City) | Club President (quest-giver) | — |
-| graveyard (Graveyard) | — | Thick Bone (weapon) |
-| route_11 (Route 11) | — | — |
-| guard_house (Guard House) | — | — |
-| silence_bridge (Silence Bridge) | Snorlax (hostile, blocks NORTH) | — |
-| crossroad (Lavender Crossroad) | — | Leftovers |
-| tower (Pokemon Tower) | — | Cubone's Skull |
-| lavender_town (Lavender Town) | Mr. Fuji (quest-giver) | — |
-
-**Items:** Thick Bone (weapon, `dmg 34`), Leftovers, Cubone's Skull, and the Poke
-Flute (granted as the main quest reward, not placed in a room).
-
-**Quests:**
-
-- `quest_blocked_path` (deliver) — defeat Snorlax and bring the Leftovers (found
-  beyond the bridge) to the Club President; reward: the Poke Flute.
-- `quest_tower_mystery` (collect) — retrieve the Cubone's Skull from the Pokemon
-  Tower for Mr. Fuji.
+---
 
 ## Server Logging
 
-The server emits **structured JSON logs** via the `src/logger` package, built on
-the standard library `log` + `encoding/json` (not `log/slog`, so it builds on
-Go 1.18). Every entry includes a precise
-RFC3339 `time`, a `level` (`INFO` / `WARN` / `ERROR`) and a `msg`, plus
-event-specific fields. Logs are written to **stdout**, so they can be piped to a
-file or a log collector (e.g. `./bin/tap-server | jq`).
+The server emits **structured JSON logs** to stdout via `src/logger` (built on `log` + `encoding/json` for Go 1.18 compatibility).
 
-### Log format
+### Log entry format
 
 ```json
-{"time":"2026-06-22T18:04:11.512Z","level":"INFO","msg":"command received","player":"alice","addr":"127.0.0.1:53024","cmd":"TAKE","args":"item_thick_bone"}
+{
+  "time": "2026-06-22T18:04:11.512Z",
+  "level": "INFO",
+  "msg": "command received",
+  "player": "alice",
+  "addr": "127.0.0.1:53024",
+  "cmd": "TAKE",
+  "args": "item_thick_bone"
+}
 ```
 
 ### Event types
 
-| `msg` | Level | Key fields | Trigger |
-|-------|-------|------------|---------|
-| `server ready` | INFO | `addr` | Server starts listening |
-| `connection open` | INFO | `addr` | TCP connection accepted |
-| `client registered` | INFO | `name`, `addr` | Successful authentication |
-| `auth failed` | WARN | `addr` | Authentication aborted/failed |
-| `connection close` | INFO | `name`, `addr` | Client disconnects |
-| `command received` | INFO | `player`, `addr`, `cmd`, `args` | Any command from a client |
-| `response sent` | INFO | `addr`, `kind` (`OK`/`EVT`), `data` | Server reply / event |
-| `error response` | WARN | `addr`, `code`, `sym` | Error code sent to a client |
-| `world change` | INFO | `event` (`item_take`, `item_drop`, `npc_talk`, `combat_start`, `combat_round`, `combat_defend`, `npc_defeated`, `player_respawn`), `player`, ... | World state mutation (items, NPC interactions, combat) |
-| `quest progress` | INFO | `event` (`quest_accept`/`quest_complete`), `player`, `quest` | Quest lifecycle |
-| `abuse detected` | WARN | `reason` (`command_flood` / `rapid_connection`), `addr`, `count` (+`name` for floods) | Command flooding or rapid connections from one IP |
-| `listen failed` / `world load failed` / `scanner error` / `respawn failed` | ERROR | `err`, ... | Internal failures |
+| `msg` | Level | Trigger |
+|-------|-------|---------|
+| `server ready` | INFO | Server starts listening |
+| `connection open` | INFO | TCP connection accepted |
+| `client registered` | INFO | Successful authentication |
+| `auth failed` | WARN | Authentication aborted/failed |
+| `connection close` | INFO | Client disconnects |
+| `command received` | INFO | Any command from a client |
+| `response sent` | INFO | Server reply or event |
+| `error response` | WARN | Error code sent to a client |
+| `world change` | INFO | Item, NPC or combat state mutation |
+| `quest progress` | INFO | Quest accept or complete |
+| `abuse detected` | WARN | Command flooding or rapid connections |
 
-### Monitoring abuse
+### Abuse detection
 
-Two abuse patterns are monitored. **Command flooding** is detected per
-connection: more than `floodThreshold` (20) commands within a 10-second window
-emits an `abuse detected` WARN (`reason=command_flood`) with the offending
-player, address and count. **Rapid connections** are detected per remote IP in
-the accept loop: more than `rapidConnThreshold` (5) connections from the same
-address within a 10-second window emits `abuse detected` (`reason=rapid_connection`).
-Filter the stream with `./bin/tap-server | jq 'select(.level=="WARN")'` to watch
-for abuse and errors.
+- **Command flooding** — more than 20 commands within a 10-second window per connection.
+- **Rapid connections** — more than 5 connections from the same IP within 10 seconds.
 
-> Output destination: stdout. Client-side connection errors in the CLI/GUI
-> binaries remain on `fmt.Println` as they are user-facing, not server logs.
-
-## Group Contributions
-
-Roughly, **dmena-li built the system from the ground up** and **egalindo focused
-on debugging, testing, tooling and bringing the project into full subject
-compliance**. In detail, based on the git history:
-
-**dmena-li — core implementation (built from scratch)**
-
-- TCP server foundation: the `CONNECT` authentication handshake, the
-  `ClientAtender` connection lifecycle, and the central `Hub` running in a single
-  goroutine with `Register` / `Unregister` / `Broadcast` channels and per-entity
-  `sync.RWMutex` locks.
-- Networking & protocol plumbing: buffered I/O / message framing, the
-  `speakserver` reply format (`OK` / `ERR` / `EVT`), and chat across the
-  Global / Room / Group scopes.
-- World model and loading: the `models` structs (`Player`, `Room`, `Npc`, `Item`,
-  `World`) and reading the static world from YAML.
-- Core gameplay: the command parser and the `MOVE`, `LOOK`, `INVENTORY`,
-  `STATUS`, `TAKE`, `DROP`, `TALK` (with NPC dialogue) commands, the group system
-  (`CREATE` / `JOIN` / `LEAVE` / `INVITE`), the turn-based combat phase and the
-  quest system.
-- First GUI implementation (Fyne) and the initial client wiring; connection
-  time-outs and player-leave handling.
-
-**egalindo — debugging, testing, tooling & subject compliance**
-
-- Build tooling and hygiene: the `Makefile`, `gofmt`/`go vet` lint cleanup, and
-  the single-source error-code catalog (`speakserver/errors.go`) with its
-  documentation.
-- World remake: redesigned the world to meet the mandatory requirements (the
-  Kanto arc — rooms with a loop and branches, items, NPCs, the two quests) and
-  added the path-blocking Snorlax mechanic (`blocks_dir` / `PATH_BLOCKED`).
-- Logging: structured JSON logging, replacing `log/slog` with a hand-rolled
-  `log` + `encoding/json` logger for Go 1.18 compatibility, and logging of NPC
-  interactions and abuse patterns (command flooding + rapid connections).
-- Robustness fixes: world-reference validation on load, non-blocking hub
-  broadcasts, and the `MsgChan` channel-close race fix.
-- GUI V.4 compliance & polish: item display names, separated chat/log views,
-  live player counters, the TALK-opens-combat fix, the D-pad movement layout and
-  the compact theme.
-- README and project documentation.
-
-## Building and Running
-
-The build tool is **GNU Make** wrapping the Go toolchain. Available targets:
-
-| Target | Description |
-|--------|-------------|
-| `make install` | Download module dependencies (`go mod download`) |
-| `make build` | Compile server, CLI and GUI into `./bin` |
-| `make run-server` | Start the TCP server (listens on `:8080`) |
-| `make run-client` | Start the CLI client |
-| `make run-client-gui` | Start the GUI client |
-| `make lint` | `gofmt` check + `go vet` |
-| `make fmt-fix` | Reformat the code with `gofmt -w` |
-| `make clean` | Remove built binaries |
-
-Typical session (separate terminals):
+Filter for warnings only:
 
 ```bash
-make run-server        # terminal 1
-make run-client        # terminal 2
-make run-client-gui    # terminal 3
+./bin/tap-server | jq 'select(.level=="WARN")'
 ```
+
+---
 
 ## Testing
 
-Multiplayer features are tested manually by running the server and connecting
-several clients at once:
+Multiplayer behaviour is validated manually by running the server with multiple concurrent clients.
 
-- **Presence & chat:** connect two clients, `MOVE` one between rooms and confirm
-  the other receives `EVT ROOM PRESENCE ENTER/LEAVE`; send `CHAT GLOBAL/ROOM/GROUP`
-  and confirm scope-correct delivery.
-- **Items:** `TAKE` an item with one client and confirm it disappears from the
-  room for the other (`LOOK`), then `DROP` and confirm it reappears.
-- **Combat:** `ATTACK` a hostile NPC, then exercise `USE_ITEM` / `DEFEND` / `FLEE`,
-  check `STATUS`, and verify respawn at 0 HP.
-- **Quests:** `TALK` to a quest-giver, `QUEST ACCEPT`, fulfil the objective and
-  `QUEST COMPLETE`, checking `QUESTS` progress and the reward in `INVENTORY`.
+| Scenario | Steps |
+|----------|-------|
+| **Presence & chat** | Connect two clients; `MOVE` one between rooms and confirm `EVT ROOM PRESENCE ENTER/LEAVE` on the other. Send `CHAT GLOBAL/ROOM/GROUP` and verify scope-correct delivery. |
+| **Items** | `TAKE` an item on client A; confirm it disappears from `LOOK` on client B. `DROP` it and confirm it reappears. |
+| **Combat** | `ATTACK` a hostile NPC; cycle through `USE_ITEM`, `DEFEND`, `FLEE`; check `STATUS`; verify respawn at 0 HP. |
+| **Quests** | `TALK` to a quest-giver → `QUEST ACCEPT` → fulfil objective → `QUEST COMPLETE`; verify reward in `INVENTORY`. |
+
+---
+
+## Authors
+
+| Contributor | Scope |
+|-------------|-------|
+| **dmena-li** | Core implementation — TCP server foundation, `Hub`/`ClientAtender` lifecycle, protocol framing, world model, command parser, gameplay (move/look/inventory/combat/quests/groups), initial GUI and Fyne client wiring |
+| **egalindo** | Build tooling, lint/formatting, error-code catalog, world redesign (Kanto arc, Snorlax mechanic), structured JSON logging, robustness fixes (hub broadcast, channel-close race), GUI V4 polish, documentation |
